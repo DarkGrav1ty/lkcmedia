@@ -1,6 +1,77 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+const OWNER_EMAIL = "logancasey737@gmail.com";
+const FROM_EMAIL = "LKC Media <bookings@lkcmedia-az.com>";
+
+type EmailPayload = {
+    from: string;
+    to: string[];
+    subject: string;
+    html: string;
+    reply_to?: string;
+};
+
+async function sendEmail(payload: EmailPayload) {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+        console.error("RESEND_API_KEY is not configured.");
+
+        return {
+            success: false,
+            error: "Email service is not configured.",
+        };
+    }
+
+    try {
+        const response = await fetch(RESEND_API_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+
+            console.error(
+                "Resend email error:",
+                response.status,
+                errorText
+            );
+
+            return {
+                success: false,
+                error: errorText,
+            };
+        }
+
+        return {
+            success: true,
+        };
+    } catch (error) {
+        console.error("Resend request failed:", error);
+
+        return {
+            success: false,
+            error: String(error),
+        };
+    }
+}
+
+function escapeHtml(value: unknown) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -52,6 +123,29 @@ export async function POST(request: Request) {
             );
         }
 
+        const cleanName = String(name).trim();
+        const cleanEmail = String(email).trim();
+        const cleanInstagram = instagram
+            ? String(instagram).trim()
+            : null;
+
+        const cleanSport = sport
+            ? String(sport).trim()
+            : null;
+
+        const cleanPackage = selectedPackage
+            ? String(selectedPackage).trim()
+            : null;
+
+        const cleanDetails = String(details).trim();
+        const cleanLocationName = String(
+            location.name
+        ).trim();
+
+        const cleanLocationAddress = String(
+            location.address
+        ).trim();
+
         const supabaseUrl =
             process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -84,33 +178,27 @@ export async function POST(request: Request) {
             }
         );
 
+        /*
+         * Save the booking FIRST.
+         *
+         * Email failure must never cause a valid booking
+         * request to disappear.
+         */
         const { data, error } = await supabase
             .from("bookings")
             .insert({
                 status: "new",
 
-                name: String(name).trim(),
-                email: String(email).trim(),
-
-                instagram: instagram
-                    ? String(instagram).trim()
-                    : null,
+                name: cleanName,
+                email: cleanEmail,
+                instagram: cleanInstagram,
 
                 shoot_type: shootType,
-
-                sport: sport
-                    ? String(sport).trim()
-                    : null,
-
+                sport: cleanSport,
                 shoot_date: date,
 
-                location_name: String(
-                    location.name
-                ).trim(),
-
-                location_address: String(
-                    location.address
-                ).trim(),
+                location_name: cleanLocationName,
+                location_address: cleanLocationAddress,
 
                 location_latitude:
                     Number(location.latitude),
@@ -118,11 +206,8 @@ export async function POST(request: Request) {
                 location_longitude:
                     Number(location.longitude),
 
-                package: selectedPackage
-                    ? String(selectedPackage)
-                    : null,
-
-                details: String(details).trim(),
+                package: cleanPackage,
+                details: cleanDetails,
             })
             .select("id")
             .single();
@@ -141,6 +226,278 @@ export async function POST(request: Request) {
                     status: 500,
                 }
             );
+        }
+
+        /*
+         * Email Logan.
+         */
+        const ownerEmail = sendEmail({
+            from: FROM_EMAIL,
+            to: [OWNER_EMAIL],
+            reply_to: cleanEmail,
+
+            subject:
+                `New LKC Media Booking — ${cleanName}`,
+
+            html: `
+                <div
+                    style="
+                        background:#07090d;
+                        color:#ffffff;
+                        font-family:Arial,sans-serif;
+                        padding:32px;
+                    "
+                >
+                    <div
+                        style="
+                            max-width:640px;
+                            margin:0 auto;
+                        "
+                    >
+                        <h1
+                            style="
+                                margin:0 0 8px;
+                                font-size:28px;
+                            "
+                        >
+                            New Booking Request
+                        </h1>
+
+                        <p
+                            style="
+                                color:#9ca3af;
+                                margin:0 0 32px;
+                            "
+                        >
+                            A new booking was submitted through
+                            LKC Media.
+                        </p>
+
+                        <div
+                            style="
+                                background:#0d1118;
+                                border:1px solid #202631;
+                                border-radius:12px;
+                                padding:24px;
+                            "
+                        >
+                            <p>
+                                <strong>Name:</strong>
+                                ${escapeHtml(cleanName)}
+                            </p>
+
+                            <p>
+                                <strong>Email:</strong>
+                                ${escapeHtml(cleanEmail)}
+                            </p>
+
+                            <p>
+                                <strong>Instagram:</strong>
+                                ${escapeHtml(
+                                    cleanInstagram || "Not provided"
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Shoot:</strong>
+                                ${escapeHtml(shootType)}
+                            </p>
+
+                            <p>
+                                <strong>Sport:</strong>
+                                ${escapeHtml(
+                                    cleanSport || "N/A"
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Date:</strong>
+                                ${escapeHtml(date)}
+                            </p>
+
+                            <p>
+                                <strong>Package:</strong>
+                                ${escapeHtml(
+                                    cleanPackage ||
+                                    "Not selected"
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Location:</strong><br />
+                                ${escapeHtml(cleanLocationName)}
+                                <br />
+                                ${escapeHtml(
+                                    cleanLocationAddress
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Details:</strong><br />
+                                ${escapeHtml(cleanDetails)}
+                            </p>
+
+                            <p>
+                                <strong>Booking ID:</strong><br />
+                                ${escapeHtml(data.id)}
+                            </p>
+                        </div>
+
+                        <p
+                            style="
+                                color:#9ca3af;
+                                font-size:13px;
+                                margin-top:24px;
+                            "
+                        >
+                            Replying to this email will reply
+                            directly to ${escapeHtml(cleanName)}.
+                        </p>
+                    </div>
+                </div>
+            `,
+        });
+
+        /*
+         * Email the customer.
+         */
+        const customerEmail = sendEmail({
+            from: FROM_EMAIL,
+            to: [cleanEmail],
+            reply_to: OWNER_EMAIL,
+
+            subject:
+                "We received your LKC Media booking request",
+
+            html: `
+                <div
+                    style="
+                        background:#07090d;
+                        color:#ffffff;
+                        font-family:Arial,sans-serif;
+                        padding:32px;
+                    "
+                >
+                    <div
+                        style="
+                            max-width:640px;
+                            margin:0 auto;
+                        "
+                    >
+                        <h1
+                            style="
+                                margin:0 0 8px;
+                                font-size:28px;
+                            "
+                        >
+                            LKC MEDIA
+                        </h1>
+
+                        <div
+                            style="
+                                width:48px;
+                                height:3px;
+                                background:#0088ff;
+                                margin:20px 0 28px;
+                            "
+                        ></div>
+
+                        <h2>
+                            Thanks, ${escapeHtml(cleanName)}.
+                        </h2>
+
+                        <p
+                            style="
+                                color:#d1d5db;
+                                line-height:1.7;
+                            "
+                        >
+                            Your booking request has been received.
+                            I'll review the details and get back to
+                            you as soon as possible.
+                        </p>
+
+                        <div
+                            style="
+                                background:#0d1118;
+                                border:1px solid #202631;
+                                border-radius:12px;
+                                padding:24px;
+                                margin-top:28px;
+                            "
+                        >
+                            <p>
+                                <strong>Shoot:</strong>
+                                ${escapeHtml(shootType)}
+                            </p>
+
+                            <p>
+                                <strong>Date:</strong>
+                                ${escapeHtml(date)}
+                            </p>
+
+                            <p>
+                                <strong>Location:</strong><br />
+                                ${escapeHtml(cleanLocationName)}
+                            </p>
+
+                            <p>
+                                <strong>Package:</strong>
+                                ${escapeHtml(
+                                    cleanPackage ||
+                                    "Not selected"
+                                )}
+                            </p>
+                        </div>
+
+                        <p
+                            style="
+                                color:#9ca3af;
+                                font-size:13px;
+                                line-height:1.6;
+                                margin-top:28px;
+                            "
+                        >
+                            This is a request confirmation,
+                            not a final booking confirmation.
+                            Your session is not confirmed until
+                            you hear back from LKC Media.
+                        </p>
+
+                        <p
+                            style="
+                                margin-top:32px;
+                            "
+                        >
+                            LKC Media<br />
+                            Real Moments. Lasting Memories.
+                        </p>
+                    </div>
+                </div>
+            `,
+        });
+
+        /*
+         * Run both emails without allowing an email problem
+         * to undo the successfully stored booking.
+         */
+        const emailResults = await Promise.allSettled([
+            ownerEmail,
+            customerEmail,
+        ]);
+
+        for (const result of emailResults) {
+            if (result.status === "rejected") {
+                console.error(
+                    "Booking email promise rejected:",
+                    result.reason
+                );
+            } else if (!result.value.success) {
+                console.error(
+                    "Booking email delivery failed:",
+                    result.value.error
+                );
+            }
         }
 
         return NextResponse.json(
