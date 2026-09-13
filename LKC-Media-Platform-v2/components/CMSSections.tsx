@@ -1,0 +1,7 @@
+type Section = { id:string; section_type:string; title:string; subtitle:string; body:string; image_url:string|null; button_label:string|null; button_href:string|null; is_visible:boolean };
+export default function CMSSections({ sections }: { sections: Section[] }) {
+    return <>{sections.filter((s)=>s.is_visible).map((s)=>{
+        if(s.section_type==="cta") return <section key={s.id} className="border-t border-white/10 px-5 py-24 text-center md:px-10"><div className="mx-auto max-w-3xl">{s.subtitle&&<p className="text-xs font-black uppercase tracking-[.28em] text-[#0088ff]">{s.subtitle}</p>}<h2 className="mt-3 text-4xl font-black uppercase tracking-[-.04em] md:text-6xl">{s.title}</h2>{s.body&&<p className="mx-auto mt-5 max-w-xl leading-7 text-white/50">{s.body}</p>}{s.button_label&&<a href={s.button_href||"#book"} className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black">{s.button_label}</a>}</div></section>;
+        return <section key={s.id} className="border-t border-white/10 px-5 py-24 md:px-10"><div className={`mx-auto grid max-w-7xl items-center gap-10 ${s.image_url?"md:grid-cols-2":""}`}><div>{s.subtitle&&<p className="text-xs font-black uppercase tracking-[.28em] text-[#0088ff]">{s.subtitle}</p>}<h2 className="mt-3 text-4xl font-black uppercase tracking-[-.04em] md:text-6xl">{s.title}</h2><p className="mt-5 max-w-2xl leading-7 text-white/55">{s.body}</p></div>{s.image_url&&<img src={s.image_url} alt="" className="max-h-[650px] w-full rounded-3xl object-cover"/>}</div></section>;
+    })}</>;
+}
