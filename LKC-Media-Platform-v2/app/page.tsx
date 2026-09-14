@@ -158,49 +158,36 @@ export default async function Home() {
                 </div>
             </section>
 
-            {/* ABOUT / PURPOSE */}
+            {/* BRAND STATEMENT */}
             <section className="relative overflow-hidden border-y border-white/10 px-5 py-24 md:px-10 md:py-32">
-                <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.15fr] lg:items-center">
-                    <div>
-                        <p className="text-xs font-black uppercase tracking-[.3em] text-[#0088ff]">
-                            Behind The Lens
-                        </p>
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-1/2 top-1/2 h-[34rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 opacity-[0.025]"
+                >
+                    <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-white" />
 
-                        <h2 className="mt-5 text-4xl font-black uppercase leading-[.95] tracking-[-.045em] md:text-6xl">
-                            Photography
-                            <br />
+                    <div className="absolute left-0 top-[30%] h-16 w-full bg-white" />
+                </div>
 
-                            <span className="text-white/35">
-                                With Purpose.
-                            </span>
-                        </h2>
-                    </div>
+                <div className="relative mx-auto max-w-5xl text-center">
+                    <p className="text-xs font-black uppercase tracking-[.3em] text-[#0088ff]">
+                        Behind The Lens
+                    </p>
 
-                    <div>
-                        <p className="text-base leading-8 text-white/60 md:text-lg">
-                            I&apos;m Logan, the photographer behind
-                            LKC Media. I started shooting in 2025,
-                            focusing on sports and portraits and the
-                            moments people actually want to remember.
-                        </p>
+                    <h2 className="mx-auto mt-6 text-5xl font-black uppercase leading-[.92] tracking-[-.05em] md:text-7xl">
+                        Real Moments.
+                        <br />
 
-                        <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith is an important part of who I am
-                            and shapes how I approach my work: serve
-                            people well, work with purpose, and give
-                            my best to every shoot. LKC Media is for
-                            everyone, regardless of background or
-                            belief.
-                        </p>
+                        <span className="text-white/35">
+                            Lasting Memories.
+                        </span>
+                    </h2>
 
-                        <div className="mt-8 flex items-center gap-4">
-                            <div className="h-px w-10 bg-[#0088ff]" />
+                    <div className="mx-auto mt-10 h-px w-12 bg-[#0088ff]" />
 
-                            <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory · Colossians 3:23
-                            </p>
-                        </div>
-                    </div>
+                    <p className="mt-6 text-xs font-bold uppercase tracking-[.24em] text-white/35">
+                        For His Glory · Colossians 3:23
+                    </p>
                 </div>
             </section>
 
@@ -233,15 +220,14 @@ export default async function Home() {
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
                             <p className="text-sm text-white/40">
-                                No featured work is currently
-                                published.
+                                No featured work is currently published.
                             </p>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* EXISTING CMS CONTENT */}
+            {/* CMS / ABOUT */}
             <CMSSections
                 sections={sections}
             />
