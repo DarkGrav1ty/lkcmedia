@@ -4,6 +4,7 @@ import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
 import CMSSections from "@/components/CMSSections";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import DailyVerse from "@/components/DailyVerse";
 
 const featured: GalleryPhoto[] = [
     {
@@ -221,65 +222,11 @@ export default async function Home() {
             <CMSSections sections={sections} />
 
 
-{/* PRICING */}
+	{/* PRICING */}
             <Pricing />
 
-
             {/* VERSE OF THE DAY */}
-            <section className="border-t border-white/10 px-5 py-20 md:px-10">
-                <div className="mx-auto max-w-7xl">
-
-                    <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0d1118] px-6 py-10 md:px-12 md:py-14">
-
-                        {/* Subtle Cross */}
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute right-[-2rem] top-1/2 h-72 w-44 -translate-y-1/2 opacity-[0.025]"
-                        >
-                            <div className="absolute left-1/2 top-0 h-full w-10 -translate-x-1/2 bg-white" />
-                            <div className="absolute left-0 top-[30%] h-10 w-full bg-white" />
-                        </div>
-
-                        <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-
-                            <div className="max-w-3xl">
-
-                                <p className="text-xs font-black uppercase tracking-[.3em] text-[#0088ff]">
-                                    Daily Scripture
-                                </p>
-
-                                <h2 className="mt-4 text-3xl font-black uppercase tracking-[-.04em] md:text-5xl">
-                                    Verse of the Day
-                                </h2>
-
-                                <p className="mt-5 max-w-2xl text-base leading-7 text-white/50">
-                                    Take a moment in the middle of the day to get into
-                                    God&apos;s Word. Read today&apos;s Verse of the Day
-                                    with YouVersion.
-                                </p>
-
-                            </div>
-
-                            <a
-                                href="https://www.bible.com/verse-of-the-day"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#0088ff] px-7 py-4 font-black transition hover:bg-[#1994ff]"
-                            >
-                                Read Today&apos;s Verse →
-                            </a>
-
-                        </div>
-
-                        <div className="relative mt-8 border-t border-white/10 pt-5">
-                            <p className="text-[10px] font-bold uppercase tracking-[.22em] text-white/25">
-                                Read on YouVersion Bible
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
+            <DailyVerse />
 
 
             {/* PHILIPPIANS */}
