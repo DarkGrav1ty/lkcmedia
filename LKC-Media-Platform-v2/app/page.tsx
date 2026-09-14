@@ -167,14 +167,15 @@ export default async function Home() {
 
                     <div>
                         <p className="text-base leading-8 text-white/60 md:text-lg">
-                            Real moments. Lasting memories. That&apos;s
-                            what LKC Media is built around.
+                            I&apos;m Logan, the photographer being LKC Media. 
+                            I started shooting in 2025, focusing on sports and portraits and the moments people want to remember.
                         </p>
 
                         <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith shapes how I approach my work:
+                            My faith is an important part of who I am and shaped how I approach my work:
                             serve people well, work with purpose, and
                             give my best to every shoot.
+                            LKC Media is for everyone, regardless of background or belief.
                         </p>
 
                         <div className="mt-8 flex items-center gap-4">
