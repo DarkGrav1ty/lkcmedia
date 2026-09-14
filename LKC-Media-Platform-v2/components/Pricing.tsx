@@ -47,7 +47,7 @@ export default function Pricing() {
                                     All best edited photos for teams, programs, and events.
                                 </p>
                             </div>
-                            <strong className="text-4xl">$90</strong>
+                            <strong className="text-4xl">Contact</strong>
                         </div>
                     </div>
 
