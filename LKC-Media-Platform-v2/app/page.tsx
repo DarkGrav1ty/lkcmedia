@@ -4,7 +4,6 @@ import GalleryLightbox, {
 } from "@/components/GalleryLightbox";
 import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
-import CMSSections from "@/components/CMSSections";
 import DailyVerse from "@/components/DailyVerse";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -25,7 +24,6 @@ async function cms() {
 
         const [
             settingsResult,
-            sectionsResult,
             featuredResult,
         ] = await Promise.all([
             db
@@ -33,12 +31,6 @@ async function cms() {
                 .select("*")
                 .eq("id", "main")
                 .single(),
-
-            db
-                .from("page_sections")
-                .select("*")
-                .eq("page", "home")
-                .order("sort_order"),
 
             db
                 .from("media_assets")
@@ -78,7 +70,6 @@ async function cms() {
 
         return {
             settings: settingsResult.data,
-            sections: sectionsResult.data || [],
             featured,
         };
     } catch (error) {
@@ -89,7 +80,6 @@ async function cms() {
 
         return {
             settings: null,
-            sections: [],
             featured: [] as GalleryPhoto[],
         };
     }
@@ -100,7 +90,6 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
     const {
         settings,
-        sections,
         featured,
     } = await cms();
 
@@ -234,11 +223,6 @@ export default async function Home() {
                     )}
                 </div>
             </section>
-
-            {/* ABOUT / CMS */}
-            <CMSSections
-                sections={sections}
-            />
 
             {/* PRICING */}
             <Pricing />
