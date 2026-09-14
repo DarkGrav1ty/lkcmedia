@@ -23,6 +23,7 @@ export async function PATCH(
     const body = await request.json();
 
     const updates: {
+        album_id?: string | null;
         gallery?: "sports" | "portraits";
         is_featured?: boolean;
         is_visible?: boolean;
@@ -38,6 +39,13 @@ export async function PATCH(
         }
 
         updates.gallery = body.gallery;
+    }
+
+    if (body.album_id !== undefined) {
+        updates.album_id =
+            body.album_id === null || body.album_id === ""
+                ? null
+                : String(body.album_id);
     }
 
     if (body.is_featured !== undefined) {
