@@ -133,7 +133,7 @@ export default function Home() {
                             href="/gallery"
                             className="text-sm font-black text-white/55 transition hover:text-white"
                         >
-                            All Galleries â†’
+                            All Galleries &rarr;
                         </Link>
                     </div>
 
@@ -186,3 +186,5 @@ export default function Home() {
         </main>
     );
 }
+
+
