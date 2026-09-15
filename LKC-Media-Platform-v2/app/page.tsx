@@ -56,31 +56,22 @@ async function cms() {
         }
 
         const featuredMedia =
-            (featuredResult.data ||
-                []) as MediaAsset[];
+            (featuredResult.data || []) as MediaAsset[];
 
         const featured: GalleryPhoto[] =
-            featuredMedia.map(
-                (photo) => ({
-                    id: photo.id,
-                    preview:
-                        photo.public_url,
-                    title: photo.file_name.replace(
-                        /\.[^/.]+$/,
-                        ""
-                    ),
-                })
-            );
+            featuredMedia.map((photo) => ({
+                id: photo.id,
+                preview: photo.public_url,
+                title: photo.file_name.replace(
+                    /\.[^/.]+$/,
+                    ""
+                ),
+            }));
 
         return {
-            settings:
-                settingsResult.data,
+            settings: settingsResult.data,
             featured,
-            heroMedia:
-                featuredMedia.slice(
-                    0,
-                    3
-                ),
+            heroMedia: featuredMedia[0] || null,
         };
     } catch (error) {
         console.error(
@@ -90,16 +81,13 @@ async function cms() {
 
         return {
             settings: null,
-            featured:
-                [] as GalleryPhoto[],
-            heroMedia:
-                [] as MediaAsset[],
+            featured: [] as GalleryPhoto[],
+            heroMedia: null as MediaAsset | null,
         };
     }
 }
 
-export const dynamic =
-    "force-dynamic";
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
     const {
@@ -108,161 +96,84 @@ export default async function Home() {
         heroMedia,
     } = await cms();
 
-    const primaryHeroSource =
-        heroMedia[0]?.public_url ||
+    const heroSource =
+        heroMedia?.public_url ||
         "/images/hero.jpg";
 
-    const secondaryHeroSource =
-        heroMedia[1]?.public_url ||
-        primaryHeroSource;
-
-    const tertiaryHeroSource =
-        heroMedia[2]?.public_url ||
-        secondaryHeroSource;
-
-    const primaryHero =
-        heroMedia[0]?.public_url
-            ? heroImageUrl(
-                  primaryHeroSource
-              )
-            : primaryHeroSource;
-
-    const secondaryHero =
-        heroMedia[1]?.public_url
-            ? heroImageUrl(
-                  secondaryHeroSource
-              )
-            : secondaryHeroSource;
-
-    const tertiaryHero =
-        heroMedia[2]?.public_url
-            ? heroImageUrl(
-                  tertiaryHeroSource
-              )
-            : tertiaryHeroSource;
+    const hero =
+        heroMedia?.public_url
+            ? heroImageUrl(heroSource)
+            : heroSource;
 
     return (
         <main>
             {/* HERO */}
             <section className="relative min-h-[92vh] overflow-hidden pt-20">
-                {/* Mobile Hero */}
-                <div className="absolute inset-0 md:hidden">
+                {/* Full-Bleed Hero Photo */}
+                <div className="absolute inset-0">
                     <img
-                        src={
-                            primaryHero
-                        }
+                        src={hero}
                         alt="LKC Media featured photography"
                         fetchPriority="high"
                         decoding="async"
-                        draggable={
-                            false
-                        }
+                        draggable={false}
                         className="h-full w-full select-none object-cover object-[center_22%]"
                     />
-
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/20" />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
                 </div>
 
-                {/* Desktop Split Hero */}
-                <div className="absolute inset-0 hidden md:grid md:grid-cols-[1.45fr_.55fr]">
-                    <div className="relative overflow-hidden">
-                        <img
-                            src={
-                                primaryHero
-                            }
-                            alt="LKC Media featured sports photography"
-                            fetchPriority="high"
-                            decoding="async"
-                            draggable={
-                                false
-                            }
-                            className="h-full w-full select-none object-cover object-[center_22%]"
-                        />
-
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
-                    </div>
-
-                    <div className="grid grid-rows-2 gap-1 bg-[#07090d] pl-1">
-                        <div className="relative overflow-hidden">
-                            <img
-                                src={
-                                    secondaryHero
-                                }
-                                alt="LKC Media featured photography"
-                                loading="eager"
-                                decoding="async"
-                                draggable={
-                                    false
-                                }
-                                className="h-full w-full select-none object-cover"
-                            />
-
-                            <div className="absolute inset-0 bg-black/15" />
-                        </div>
-
-                        <div className="relative overflow-hidden">
-                            <img
-                                src={
-                                    tertiaryHero
-                                }
-                                alt="LKC Media featured photography"
-                                loading="eager"
-                                decoding="async"
-                                draggable={
-                                    false
-                                }
-                                className="h-full w-full select-none object-cover"
-                            />
-
-                            <div className="absolute inset-0 bg-black/15" />
-                        </div>
-                    </div>
-                </div>
+                {/* Controlled Readability Gradients */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-black/5" />
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
 
-                <div className="relative mx-auto flex min-h-[calc(92vh-5rem)] max-w-[1500px] items-end px-5 pb-16 md:px-10 md:pb-24">
-                    <div className="max-w-5xl">
+                {/* Hero Content */}
+                <div className="relative mx-auto flex min-h-[calc(92vh-5rem)] max-w-[1500px] items-end px-5 pb-16 md:px-10 md:pb-20">
+                    <div className="max-w-4xl">
                         <p className="mb-5 text-xs font-black uppercase tracking-[.3em] text-[#45a9ff]">
-                            Sports + Portrait
-                            Photography
+                            Sports + Portrait Photography
                         </p>
 
-                        <h1 className="text-5xl font-black uppercase leading-[.88] tracking-[-.055em] sm:text-7xl lg:text-[7.5rem]">
+                        <h1 className="text-5xl font-black uppercase leading-[.88] tracking-[-.055em] sm:text-7xl lg:text-[7rem]">
                             More Than
                             <br />
                             A Game.
                         </h1>
 
-                        <p className="mt-6 max-w-xl text-base leading-7 text-white/65 md:text-lg">
+                        <p className="mt-6 max-w-xl text-base leading-7 text-white/70 md:text-lg">
                             {settings?.tagline ||
                                 "Real moments. Lasting memories."}
                         </p>
 
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Link
-                                href="/#work"
+                                href="/gallery"
                                 className="rounded-full bg-[#0088ff] px-6 py-3.5 font-black transition hover:bg-[#0077df]"
                             >
-                                View Work
+                                View Galleries
                             </Link>
 
-                            <BookingButton className="rounded-full border border-white/25 bg-black/40 px-6 py-3.5 font-black backdrop-blur-sm transition hover:border-white/50 hover:bg-black/60">
-                                Book Session
+                            <BookingButton className="rounded-full border border-white/30 bg-black/30 px-6 py-3.5 font-black backdrop-blur-md transition hover:border-white/60 hover:bg-black/50">
+                                Book A Session
                             </BookingButton>
                         </div>
 
-                        <div className="mt-10 flex items-center gap-4 text-white/40">
+                        <div className="mt-10 flex items-center gap-4 text-white/45">
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em]">
-                                For His
-                                Glory
+                                LKC Media · Arizona
                             </p>
                         </div>
                     </div>
+                </div>
+
+                {/* Scroll Cue */}
+                <div className="pointer-events-none absolute bottom-7 right-6 hidden items-center gap-3 text-white/30 md:flex md:right-10">
+                    <span className="text-[10px] font-black uppercase tracking-[.24em]">
+                        Explore
+                    </span>
+
+                    <div className="h-px w-12 bg-white/25" />
                 </div>
             </section>
 
@@ -279,49 +190,32 @@ export default async function Home() {
                             <br />
 
                             <span className="text-white/35">
-                                With
-                                Purpose.
+                                With Purpose.
                             </span>
                         </h2>
                     </div>
 
                     <div>
                         <p className="text-base leading-8 text-white/60 md:text-lg">
-                            I&apos;m Logan,
-                            the photographer
-                            behind LKC Media.
-                            I started shooting
-                            in 2025, focusing
-                            on sports and
-                            portraits and the
-                            moments people
-                            want to remember.
+                            I&apos;m Logan, the photographer behind LKC Media.
+                            I started shooting in 2025, focusing on sports
+                            and portraits and the moments people want to
+                            remember.
                         </p>
 
                         <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith is an
-                            important part of
-                            who I am and
-                            shaped how I
-                            approach my work:
-                            serve people
-                            well, work with
-                            purpose, and give
-                            my best to every
-                            shoot. LKC Media
-                            is for everyone,
-                            regardless of
-                            background or
-                            belief.
+                            My faith is an important part of who I am and
+                            shaped how I approach my work: serve people
+                            well, work with purpose, and give my best to
+                            every shoot. LKC Media is for everyone,
+                            regardless of background or belief.
                         </p>
 
                         <div className="mt-8 flex items-center gap-4">
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory
-                                · Colossians
-                                3:23
+                                For His Glory · Colossians 3:23
                             </p>
                         </div>
                     </div>
@@ -353,20 +247,14 @@ export default async function Home() {
                         </Link>
                     </div>
 
-                    {featured.length >
-                    0 ? (
+                    {featured.length > 0 ? (
                         <GalleryLightbox
-                            photos={
-                                featured
-                            }
+                            photos={featured}
                         />
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
                             <p className="text-sm text-white/40">
-                                No featured
-                                work is
-                                currently
-                                published.
+                                No featured work is currently published.
                             </p>
                         </div>
                     )}
@@ -390,18 +278,13 @@ export default async function Home() {
                     </p>
 
                     <h2 className="mt-4 text-5xl font-black uppercase tracking-[-.05em] md:text-7xl">
-                        Let&apos;s Create
-                        Something.
+                        Let&apos;s Create Something.
                     </h2>
 
                     <p className="mx-auto mt-5 max-w-xl leading-7 text-white/50">
-                        Tell me about the
-                        game, portrait
-                        session, date, and
-                        location. Let&apos;s
-                        turn the moment into
-                        something worth
-                        remembering.
+                        Tell me about the game, portrait session,
+                        date, and location. Let&apos;s turn the
+                        moment into something worth remembering.
                     </p>
 
                     <BookingButton className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black transition hover:bg-[#0077df]">
@@ -420,9 +303,7 @@ export default async function Home() {
                         </p>
 
                         <p className="mt-1 text-xs text-white/30">
-                            © 2026 LKC
-                            Media. All rights
-                            reserved.
+                            © 2026 LKC Media. All rights reserved.
                         </p>
                     </div>
 
