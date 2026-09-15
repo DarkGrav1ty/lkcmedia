@@ -8,6 +8,7 @@ export default function Header() {
                 <Link
                     href="/"
                     className="group flex items-center gap-3 font-black tracking-tight"
+                    aria-label="LKC Media home"
                 >
                     <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-white text-xs transition group-hover:border-[#0088ff] group-hover:text-[#45a9ff]">
                         LKC
@@ -24,7 +25,7 @@ export default function Header() {
                 >
                     <Link
                         href="/#work"
-                        className="hidden transition hover:text-white md:block"
+                        className="hidden transition hover:text-white lg:block"
                     >
                         Work
                     </Link>
@@ -37,8 +38,15 @@ export default function Header() {
                     </Link>
 
                     <Link
-                        href="/#pricing"
+                        href="/services"
                         className="hidden transition hover:text-white sm:block"
+                    >
+                        Services
+                    </Link>
+
+                    <Link
+                        href="/#pricing"
+                        className="hidden transition hover:text-white lg:block"
                     >
                         Pricing
                     </Link>
