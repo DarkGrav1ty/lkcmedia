@@ -1,20 +1,32 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
-const statuses = ["new", "contacted", "confirmed", "completed", "cancelled"];
-
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { id } = await params;
-    const body = await request.json();
-    if (!statuses.includes(body.status)) return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-
-    const { error } = await getSupabaseAdmin().from("bookings").update({
-        status: body.status,
-        updated_at: new Date().toISOString(),
-    }).eq("id", id);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
+import { fail, jsonBody, privateHeaders, uuid } from "@/lib/security";
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
+    const { id } = await params,
+      b = await jsonBody(request);
+    if (
+      !uuid(id) ||
+      !["new", "contacted", "confirmed", "completed", "cancelled"].includes(
+        b.status,
+      )
+    )
+      return fail("Invalid booking update.");
+    const { data, error } = await getSupabaseAdmin()
+      .from("bookings")
+      .update({ status: b.status, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return fail("Booking not found.", 404);
+    return NextResponse.json({ success: true }, { headers: privateHeaders });
+  } catch {
+    return fail("Could not update booking.", 503);
+  }
 }

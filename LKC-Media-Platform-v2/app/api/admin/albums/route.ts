@@ -1,110 +1,49 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
-function makeSlug(name: string) {
-    return name
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-}
-
+import { albumFields } from "@/lib/media";
+import { albumInput } from "@/lib/album-input";
+import { fail, jsonBody, privateHeaders } from "@/lib/security";
 export async function GET() {
-    if (!(await isAdminAuthenticated())) {
-        return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
-        );
-    }
-
-    const db = getSupabaseAdmin();
-
-    const { data, error } = await db
-        .from("albums")
-        .select("*")
-        .order("event_date", { ascending: false })
-        .order("created_at", { ascending: false });
-
-    if (error) {
-        return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
-        );
-    }
-
-    return NextResponse.json({
-        albums: data || [],
-    });
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("albums")
+      .select(albumFields)
+      .order("sort_order")
+      .order("id");
+    if (error) throw error;
+    return NextResponse.json({ albums: data }, { headers: privateHeaders });
+  } catch {
+    return fail("Could not load albums.", 503);
+  }
 }
-
 export async function POST(request: Request) {
-    if (!(await isAdminAuthenticated())) {
-        return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
-        );
-    }
-
-    const body = await request.json();
-
-    const name = String(body.name || "").trim();
-    const gallery = body.gallery;
-    const eventDate = body.event_date || null;
-
-    if (!name) {
-        return NextResponse.json(
-            { error: "Group name is required." },
-            { status: 400 }
-        );
-    }
-
-    if (!["sports", "portraits"].includes(gallery)) {
-        return NextResponse.json(
-            { error: "Invalid gallery." },
-            { status: 400 }
-        );
-    }
-
-    const db = getSupabaseAdmin();
-
-    let slug = makeSlug(name);
-
-    if (!slug) {
-        slug = crypto.randomUUID();
-    }
-
-    const { data: existing } = await db
-        .from("albums")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
-
-    if (existing) {
-        slug = `${slug}-${Date.now()}`;
-    }
-
-    const { data, error } = await db
-        .from("albums")
-        .insert({
-            name,
-            slug,
-            gallery,
-            event_date: eventDate,
-            is_visible: true,
-        })
-        .select("*")
-        .single();
-
-    if (error) {
-        return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
-        );
-    }
-
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  let row;
+  try {
+    row = albumInput(await jsonBody(request));
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "Invalid album.");
+  }
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("albums")
+      .insert(row)
+      .select(albumFields)
+      .single();
+    if (error)
+      return fail(
+        error.code === "23505"
+          ? "That gallery URL is already used."
+          : "Could not save album.",
+        409,
+      );
     return NextResponse.json(
-        { album: data },
-        { status: 201 }
+      { album: data },
+      { status: 201, headers: privateHeaders },
     );
+  } catch {
+    return fail("Could not save album.", 503);
+  }
 }

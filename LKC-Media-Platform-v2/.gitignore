@@ -1,3 +1,10 @@
 /dist/
 .vinext/
 .wrangler/
+
+node_modules/
+.env*
+!.env.example
+.dev.vars*
+.next/
+*.tsbuildinfo

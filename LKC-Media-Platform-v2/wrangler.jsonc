@@ -1,10 +1,14 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
+
     "name": "lkcmedia",
+
     "compatibility_date": "2026-09-13",
+
     "compatibility_flags": [
         "nodejs_compat"
     ],
+
     "main": "vinext/server/fetch-handler",
 
     "assets": {
@@ -31,6 +35,21 @@
             "id": "9b3325b683114bdeaddce36990f82580"
         }
     ],
+
+    "routes": [
+        {
+            "pattern": "lkcmedia-az.com",
+            "zone_name": "lkcmedia-az.com",
+            "custom_domain": true
+        }
+    ],
+
+    "observability": {
+        "enabled": true,
+        "logs": {
+            "enabled": true
+        }
+    },
 
     "vars": {
         "NEXT_PUBLIC_SUPABASE_URL": "https://cynltgpvoaqxqkpzqqne.supabase.co",

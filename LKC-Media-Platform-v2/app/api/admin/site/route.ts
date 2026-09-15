@@ -1,54 +1,103 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
+import { fail, jsonBody, privateHeaders, uuid } from "@/lib/security";
+import { safeHref } from "@/lib/safe-url";
 export async function GET() {
-    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
     const db = getSupabaseAdmin();
-    const [{ data: settings, error: settingsError }, { data: sections, error: sectionsError }] = await Promise.all([
-        db.from("site_settings").select("*").eq("id", "main").single(),
-        db.from("page_sections").select("*").eq("page", "home").order("sort_order"),
+    const [s, c] = await Promise.all([
+      db
+        .from("site_settings")
+        .select("site_name,tagline,contact_email,instagram_url")
+        .eq("id", "main")
+        .single(),
+      db
+        .from("page_sections")
+        .select("*")
+        .eq("page", "home")
+        .order("sort_order"),
     ]);
-    if (settingsError || sectionsError) return NextResponse.json({ error: settingsError?.message || sectionsError?.message }, { status: 500 });
-    return NextResponse.json({ settings, sections });
+    if (s.error || c.error) throw new Error();
+    return NextResponse.json(
+      { settings: s.data, sections: c.data },
+      { headers: privateHeaders },
+    );
+  } catch {
+    return fail("Could not load settings.", 503);
+  }
 }
-
 export async function PUT(request: Request) {
-    if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const body = await request.json();
-    const db = getSupabaseAdmin();
-
-    if (body.settings) {
-        const { error } = await db.from("site_settings").upsert({ id: "main", ...body.settings, updated_at: new Date().toISOString() });
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
+    const b = await jsonBody(request);
+    if (
+      !b.settings ||
+      !Array.isArray(b.sections) ||
+      b.sections.length > 50 ||
+      !Array.isArray(b.deletedIds) ||
+      !b.deletedIds.every(uuid)
+    )
+      return fail("Invalid settings.");
+    const settings: Record<string, string | null> = {};
+    for (const k of [
+      "site_name",
+      "tagline",
+      "contact_email",
+      "instagram_url",
+    ]) {
+      const v = b.settings[k] || "";
+      if (typeof v !== "string" || v.length > 500)
+        return fail("Invalid settings text.");
+      settings[k] = v.trim();
     }
-
-    if (Array.isArray(body.sections)) {
-        for (let i = 0; i < body.sections.length; i++) {
-            const section = body.sections[i];
-            const row = {
-                id: section.id,
-                page: "home",
-                section_type: section.section_type,
-                title: section.title || "",
-                subtitle: section.subtitle || "",
-                body: section.body || "",
-                image_url: section.image_url || null,
-                button_label: section.button_label || null,
-                button_href: section.button_href || null,
-                is_visible: section.is_visible !== false,
-                sort_order: i,
-                updated_at: new Date().toISOString(),
-            };
-            const { error } = await db.from("page_sections").upsert(row);
-            if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        }
+    if (settings.instagram_url && !safeHref(settings.instagram_url))
+      return fail("Use a valid HTTPS Instagram URL.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contact_email || ""))
+      return fail("Enter a valid contact email.");
+    const sections = [];
+    for (let i = 0; i < b.sections.length; i++) {
+      const s = b.sections[i];
+      if (
+        !uuid(s.id) ||
+        !["text", "cta"].includes(s.section_type) ||
+        typeof s.is_visible !== "boolean"
+      )
+        return fail("Invalid section.");
+      const row: Record<string, unknown> = {
+        id: s.id,
+        page: "home",
+        section_type: s.section_type,
+        is_visible: s.is_visible,
+        sort_order: i,
+        updated_at: new Date().toISOString(),
+      };
+      for (const k of [
+        "title",
+        "subtitle",
+        "body",
+        "image_url",
+        "button_label",
+        "button_href",
+      ]) {
+        const v = s[k] || "";
+        if (typeof v !== "string" || v.length > (k === "body" ? 5000 : 500))
+          return fail("Section text is too long.");
+        if ((k === "image_url" || k === "button_href") && v && !safeHref(v))
+          return fail("Use a relative path or HTTPS URL.");
+        row[k] = v;
+      }
+      sections.push(row);
     }
-
-    if (Array.isArray(body.deletedIds) && body.deletedIds.length) {
-        const { error } = await db.from("page_sections").delete().in("id", body.deletedIds);
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
+    const { error } = await getSupabaseAdmin().rpc("save_site_content", {
+      new_settings: settings,
+      new_sections: sections,
+      deleted_ids: b.deletedIds,
+    });
+    if (error) throw error;
+    return NextResponse.json({ success: true }, { headers: privateHeaders });
+  } catch {
+    return fail("Could not save website settings.", 503);
+  }
 }

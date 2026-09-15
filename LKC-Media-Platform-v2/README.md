@@ -49,3 +49,7 @@ The secure download route verifies a token, expiration, download count, and paid
 ## Images
 
 The included demo images are placeholders generated from available project imagery where possible. Replace anything in `public/images/` with your preferred LKC photos while keeping the filenames, or update the component paths.
+
+## Production v1
+
+See [PRODUCTION-V1.md](PRODUCTION-V1.md) for database migration, secrets, storage migration, and cutover checks.
