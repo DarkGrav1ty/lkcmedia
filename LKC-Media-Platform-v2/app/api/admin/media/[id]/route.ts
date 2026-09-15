@@ -25,13 +25,18 @@ export async function PATCH(
     const updates: {
         album_id?: string | null;
         gallery?: "sports" | "portraits";
+        sport?: string | null;
         is_featured?: boolean;
         is_visible?: boolean;
         sort_order?: number;
     } = {};
 
     if (body.gallery !== undefined) {
-        if (!["sports", "portraits"].includes(body.gallery)) {
+        if (
+            !["sports", "portraits"].includes(
+                body.gallery
+            )
+        ) {
             return NextResponse.json(
                 { error: "Invalid gallery." },
                 { status: 400 }
@@ -39,29 +44,66 @@ export async function PATCH(
         }
 
         updates.gallery = body.gallery;
+
+        if (body.gallery === "portraits") {
+            updates.sport = null;
+        }
+    }
+
+    if (body.sport !== undefined) {
+        if (
+            body.sport === null ||
+            String(body.sport).trim() === ""
+        ) {
+            updates.sport = null;
+        } else {
+            const sport = String(
+                body.sport
+            ).trim();
+
+            if (sport.length > 80) {
+                return NextResponse.json(
+                    {
+                        error: "Sport name is too long.",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            updates.sport = sport;
+        }
     }
 
     if (body.album_id !== undefined) {
         updates.album_id =
-            body.album_id === null || body.album_id === ""
+            body.album_id === null ||
+            body.album_id === ""
                 ? null
                 : String(body.album_id);
     }
 
     if (body.is_featured !== undefined) {
-        updates.is_featured = Boolean(body.is_featured);
+        updates.is_featured = Boolean(
+            body.is_featured
+        );
     }
 
     if (body.is_visible !== undefined) {
-        updates.is_visible = Boolean(body.is_visible);
+        updates.is_visible = Boolean(
+            body.is_visible
+        );
     }
 
     if (body.sort_order !== undefined) {
-        const sortOrder = Number(body.sort_order);
+        const sortOrder = Number(
+            body.sort_order
+        );
 
         if (!Number.isInteger(sortOrder)) {
             return NextResponse.json(
-                { error: "Invalid sort order." },
+                {
+                    error: "Invalid sort order.",
+                },
                 { status: 400 }
             );
         }
@@ -69,9 +111,13 @@ export async function PATCH(
         updates.sort_order = sortOrder;
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (
+        Object.keys(updates).length === 0
+    ) {
         return NextResponse.json(
-            { error: "No valid changes provided." },
+            {
+                error: "No valid changes provided.",
+            },
             { status: 400 }
         );
     }

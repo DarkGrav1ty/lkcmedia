@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
     CalendarDays,
@@ -62,6 +65,7 @@ type Media = {
     public_url: string;
     created_at: string;
     gallery: "sports" | "portraits";
+    sport: string | null;
     is_featured: boolean;
     is_visible: boolean;
     sort_order: number;
@@ -94,8 +98,60 @@ const statusOptions = [
     "cancelled",
 ];
 
+const sports = [
+    "Archery",
+    "Badminton",
+    "Baseball",
+    "Basketball",
+    "Beach Volleyball",
+    "BMX",
+    "Bowling",
+    "Boxing",
+    "Cheer",
+    "Cross Country",
+    "Cycling",
+    "Dance",
+    "Diving",
+    "Equestrian",
+    "Esports",
+    "Field Hockey",
+    "Flag Football",
+    "Football",
+    "Golf",
+    "Gymnastics",
+    "Ice Hockey",
+    "Lacrosse",
+    "Martial Arts",
+    "Motocross",
+    "Motorsports",
+    "Pickleball",
+    "Rodeo",
+    "Rugby",
+    "Skateboarding",
+    "Soccer",
+    "Softball",
+    "Swimming",
+    "Tennis",
+    "Track & Field",
+    "Volleyball",
+    "Water Polo",
+    "Wrestling",
+] as const;
+
 const input =
     "w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm outline-none focus:border-[#0088ff]";
+
+function isStandardSport(
+    value: string | null
+) {
+    if (!value) {
+        return false;
+    }
+
+    return sports.some(
+        (sport) => sport === value
+    );
+}
 
 export default function AdminCMS({
     initialBookings,
@@ -105,22 +161,85 @@ export default function AdminCMS({
 }: Props) {
     const router = useRouter();
 
-    const [tab, setTab] = useState("dashboard");
-    const [bookings, setBookings] = useState(initialBookings);
-    const [settings, setSettings] = useState(initialSettings);
-    const [sections, setSections] = useState(initialSections);
-    const [media, setMedia] = useState(initialMedia);
+    const [tab, setTab] =
+        useState("dashboard");
 
-    const [albums, setAlbums] = useState<Album[]>([]);
-    const [newAlbumName, setNewAlbumName] = useState("");
-    const [newAlbumGallery, setNewAlbumGallery] =
-        useState<"sports" | "portraits">("sports");
-    const [newAlbumDate, setNewAlbumDate] = useState("");
-    const [creatingAlbum, setCreatingAlbum] = useState(false);
+    const [bookings, setBookings] =
+        useState(initialBookings);
 
-    const [deletedIds, setDeletedIds] = useState<string[]>([]);
-    const [saving, setSaving] = useState(false);
-    const [notice, setNotice] = useState("");
+    const [settings, setSettings] =
+        useState(initialSettings);
+
+    const [sections, setSections] =
+        useState(initialSections);
+
+    const [media, setMedia] =
+        useState(initialMedia);
+
+    const [albums, setAlbums] =
+        useState<Album[]>([]);
+
+    const [
+        newAlbumName,
+        setNewAlbumName,
+    ] = useState("");
+
+    const [
+        newAlbumGallery,
+        setNewAlbumGallery,
+    ] = useState<
+        "sports" | "portraits"
+    >("sports");
+
+    const [
+        newAlbumDate,
+        setNewAlbumDate,
+    ] = useState("");
+
+    const [
+        creatingAlbum,
+        setCreatingAlbum,
+    ] = useState(false);
+
+    const [
+        customSports,
+        setCustomSports,
+    ] = useState<
+        Record<string, string>
+    >({});
+
+    const [
+        deletedIds,
+        setDeletedIds,
+    ] = useState<string[]>([]);
+
+    const [saving, setSaving] =
+        useState(false);
+
+    const [notice, setNotice] =
+        useState("");
+
+    useEffect(() => {
+        const initialCustomSports: Record<
+            string,
+            string
+        > = {};
+
+        initialMedia.forEach((item) => {
+            if (
+                item.sport &&
+                !isStandardSport(item.sport)
+            ) {
+                initialCustomSports[
+                    item.id
+                ] = item.sport;
+            }
+        });
+
+        setCustomSports(
+            initialCustomSports
+        );
+    }, [initialMedia]);
 
     useEffect(() => {
         if (!notice) {
@@ -131,32 +250,43 @@ export default function AdminCMS({
             setNotice("");
         }, 2500);
 
-        return () => clearTimeout(timer);
+        return () =>
+            clearTimeout(timer);
     }, [notice]);
 
     useEffect(() => {
         async function loadAlbums() {
-            const res = await fetch("/api/admin/albums");
+            const res = await fetch(
+                "/api/admin/albums"
+            );
 
             if (!res.ok) {
                 return;
             }
 
-            const data = await res.json();
+            const data =
+                await res.json();
 
-            setAlbums(data.albums || []);
+            setAlbums(
+                data.albums || []
+            );
         }
 
         loadAlbums();
     }, []);
 
-    const newCount = bookings.filter(
-        (booking) => booking.status === "new"
-    ).length;
+    const newCount =
+        bookings.filter(
+            (booking) =>
+                booking.status === "new"
+        ).length;
 
-    const confirmed = bookings.filter(
-        (booking) => booking.status === "confirmed"
-    ).length;
+    const confirmed =
+        bookings.filter(
+            (booking) =>
+                booking.status ===
+                "confirmed"
+        ).length;
 
     async function updateStatus(
         id: string,
@@ -178,7 +308,8 @@ export default function AdminCMS({
             {
                 method: "PATCH",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type":
+                        "application/json",
                 },
                 body: JSON.stringify({
                     status,
@@ -187,43 +318,64 @@ export default function AdminCMS({
         );
 
         if (!res.ok) {
-            setNotice("Could not update booking.");
+            setNotice(
+                "Could not update booking."
+            );
+
             router.refresh();
             return;
         }
 
-        setNotice("Booking updated.");
+        setNotice(
+            "Booking updated."
+        );
     }
 
     async function saveSite() {
         setSaving(true);
 
-        const res = await fetch("/api/admin/site", {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                settings,
-                sections,
-                deletedIds,
-            }),
-        });
+        const res = await fetch(
+            "/api/admin/site",
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json",
+                },
+                body: JSON.stringify({
+                    settings,
+                    sections,
+                    deletedIds,
+                }),
+            }
+        );
 
         setSaving(false);
 
         if (!res.ok) {
-            const result = await res.json();
-            setNotice(result.error || "Save failed.");
+            const result =
+                await res.json();
+
+            setNotice(
+                result.error ||
+                    "Save failed."
+            );
+
             return;
         }
 
         setDeletedIds([]);
-        setNotice("Website saved.");
+
+        setNotice(
+            "Website saved."
+        );
+
         router.refresh();
     }
 
-    function addSection(type: string) {
+    function addSection(
+        type: string
+    ) {
         setSections((old) => [
             ...old,
             {
@@ -245,7 +397,8 @@ export default function AdminCMS({
                         ? "#book"
                         : null,
                 is_visible: true,
-                sort_order: old.length,
+                sort_order:
+                    old.length,
             },
         ]);
     }
@@ -266,9 +419,14 @@ export default function AdminCMS({
         );
     }
 
-    function removeSection(id: string) {
+    function removeSection(
+        id: string
+    ) {
         setSections((old) =>
-            old.filter((section) => section.id !== id)
+            old.filter(
+                (section) =>
+                    section.id !== id
+            )
         );
 
         setDeletedIds((old) => [
@@ -281,7 +439,8 @@ export default function AdminCMS({
         index: number,
         delta: number
     ) {
-        const target = index + delta;
+        const target =
+            index + delta;
 
         if (
             target < 0 ||
@@ -305,14 +464,19 @@ export default function AdminCMS({
         setSections(copy);
     }
 
-    async function upload(file?: File) {
+    async function upload(
+        file?: File
+    ) {
         if (!file) {
             return;
         }
 
-        setNotice("Uploading image...");
+        setNotice(
+            "Uploading image..."
+        );
 
-        const form = new FormData();
+        const form =
+            new FormData();
 
         form.append(
             "file",
@@ -327,13 +491,15 @@ export default function AdminCMS({
             }
         );
 
-        const result = await res.json();
+        const result =
+            await res.json();
 
         if (!res.ok) {
             setNotice(
                 result.error ||
                     "Upload failed."
             );
+
             return;
         }
 
@@ -342,7 +508,9 @@ export default function AdminCMS({
             ...old,
         ]);
 
-        setNotice("Image uploaded.");
+        setNotice(
+            "Image uploaded."
+        );
     }
 
     async function createAlbum() {
@@ -353,6 +521,7 @@ export default function AdminCMS({
             setNotice(
                 "Enter a group name."
             );
+
             return;
         }
 
@@ -387,6 +556,7 @@ export default function AdminCMS({
                 result.error ||
                     "Could not create group."
             );
+
             return;
         }
 
@@ -398,7 +568,9 @@ export default function AdminCMS({
         setNewAlbumName("");
         setNewAlbumDate("");
 
-        setNotice("Group created.");
+        setNotice(
+            "Group created."
+        );
     }
 
     async function updateMedia(
@@ -407,6 +579,7 @@ export default function AdminCMS({
             Pick<
                 Media,
                 | "gallery"
+                | "sport"
                 | "album_id"
                 | "is_featured"
                 | "is_visible"
@@ -463,7 +636,35 @@ export default function AdminCMS({
             )
         );
 
-        setNotice("Image updated.");
+        setNotice(
+            "Image updated."
+        );
+    }
+
+    async function saveCustomSport(
+        item: Media
+    ) {
+        const value =
+            (
+                customSports[
+                    item.id
+                ] || ""
+            ).trim();
+
+        if (!value) {
+            setNotice(
+                "Enter the sport name."
+            );
+
+            return;
+        }
+
+        await updateMedia(
+            item.id,
+            {
+                sport: value,
+            }
+        );
     }
 
     async function logout() {
@@ -544,9 +745,7 @@ export default function AdminCMS({
                                 }`}
                             >
                                 <Icon
-                                    size={
-                                        18
-                                    }
+                                    size={18}
                                 />
 
                                 {label}
@@ -573,6 +772,7 @@ export default function AdminCMS({
                     <LogOut
                         size={18}
                     />
+
                     Sign Out
                 </button>
             </aside>
@@ -586,9 +786,7 @@ export default function AdminCMS({
                                 label,
                             ]) => (
                                 <button
-                                    key={
-                                        id
-                                    }
+                                    key={id}
                                     onClick={() =>
                                         setTab(
                                             id
@@ -618,6 +816,7 @@ export default function AdminCMS({
                     <a
                         href="/"
                         target="_blank"
+                        rel="noreferrer"
                         className="rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/60 hover:text-white"
                     >
                         View Site ↗
@@ -774,6 +973,7 @@ export default function AdminCMS({
                                                             {
                                                                 booking.shoot_type
                                                             }
+
                                                             {booking.sport
                                                                 ? ` • ${booking.sport}`
                                                                 : ""}
@@ -796,6 +996,7 @@ export default function AdminCMS({
                                                                     17
                                                                 }
                                                             />
+
                                                             {new Date(
                                                                 `${booking.shoot_date}T12:00:00`
                                                             ).toLocaleDateString()}
@@ -807,6 +1008,7 @@ export default function AdminCMS({
                                                                     17
                                                                 }
                                                             />
+
                                                             {
                                                                 booking.location_name
                                                             }
@@ -877,6 +1079,7 @@ export default function AdminCMS({
                                         Upload,
                                         organize,
                                         group,
+                                        categorize,
                                         and
                                         publish
                                         your
@@ -887,12 +1090,10 @@ export default function AdminCMS({
                                 <label className="cursor-pointer rounded-xl bg-[#0088ff] px-5 py-3 font-bold">
                                     <Upload
                                         className="mr-2 inline"
-                                        size={
-                                            17
-                                        }
+                                        size={17}
                                     />
-                                    Upload
-                                    Image
+
+                                    Upload Image
 
                                     <input
                                         type="file"
@@ -911,13 +1112,11 @@ export default function AdminCMS({
                                 </label>
                             </div>
 
-                            {/* GROUP MANAGER */}
                             <div className="mt-8 rounded-2xl border border-white/10 bg-[#0d1118] p-5">
                                 <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
                                     <div className="flex-1">
                                         <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                            New
-                                            Group /
+                                            New Group /
                                             Album
                                         </label>
 
@@ -973,8 +1172,7 @@ export default function AdminCMS({
 
                                     <div>
                                         <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                            Event
-                                            Date
+                                            Event Date
                                         </label>
 
                                         <input
@@ -1007,9 +1205,7 @@ export default function AdminCMS({
                                     >
                                         <Plus
                                             className="mr-2 inline"
-                                            size={
-                                                17
-                                            }
+                                            size={17}
                                         />
 
                                         {creatingAlbum
@@ -1054,224 +1250,376 @@ export default function AdminCMS({
                                 )}
                             </div>
 
-                            {/* MEDIA GRID */}
                             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 {media.map(
-                                    (item) => (
-                                        <article
-                                            key={
-                                                item.id
-                                            }
-                                            className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118]"
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    navigator.clipboard
-                                                        .writeText(
-                                                            item.public_url
-                                                        )
-                                                        .then(
-                                                            () =>
-                                                                setNotice(
-                                                                    "Image URL copied."
-                                                                )
-                                                        )
+                                    (item) => {
+                                        const customSport =
+                                            item.sport &&
+                                            !isStandardSport(
+                                                item.sport
+                                            );
+
+                                        return (
+                                            <article
+                                                key={
+                                                    item.id
                                                 }
-                                                className="block w-full"
+                                                className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118]"
                                             >
-                                                <img
-                                                    src={
-                                                        item.public_url
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        navigator.clipboard
+                                                            .writeText(
+                                                                item.public_url
+                                                            )
+                                                            .then(
+                                                                () =>
+                                                                    setNotice(
+                                                                        "Image URL copied."
+                                                                    )
+                                                            )
                                                     }
-                                                    alt={
-                                                        item.file_name
-                                                    }
-                                                    className="aspect-[4/3] w-full object-cover"
-                                                />
-                                            </button>
-
-                                            <div className="p-4">
-                                                <p className="truncate text-sm font-black">
-                                                    {
-                                                        item.file_name
-                                                    }
-                                                </p>
-
-                                                <p className="mt-1 text-[11px] text-white/30">
-                                                    Click
-                                                    image
-                                                    to
-                                                    copy
-                                                    URL
-                                                </p>
-
-                                                {/* GALLERY */}
-                                                <div className="mt-4">
-                                                    <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                                        Gallery
-                                                    </label>
-
-                                                    <select
-                                                        value={
-                                                            item.gallery
+                                                    className="block w-full"
+                                                >
+                                                    <img
+                                                        src={
+                                                            item.public_url
                                                         }
-                                                        onChange={(
-                                                            e
-                                                        ) => {
-                                                            const gallery =
-                                                                e
-                                                                    .target
-                                                                    .value as
-                                                                | "sports"
-                                                                | "portraits";
+                                                        alt={
+                                                            item.file_name
+                                                        }
+                                                        className="aspect-[4/3] w-full object-cover"
+                                                    />
+                                                </button>
 
-                                                            const selectedAlbum =
-                                                                albums.find(
+                                                <div className="p-4">
+                                                    <p className="truncate text-sm font-black">
+                                                        {
+                                                            item.file_name
+                                                        }
+                                                    </p>
+
+                                                    <p className="mt-1 text-[11px] text-white/30">
+                                                        Click image to copy URL
+                                                    </p>
+
+                                                    <div className="mt-4">
+                                                        <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
+                                                            Gallery
+                                                        </label>
+
+                                                        <select
+                                                            value={
+                                                                item.gallery
+                                                            }
+                                                            onChange={(
+                                                                e
+                                                            ) => {
+                                                                const gallery =
+                                                                    e
+                                                                        .target
+                                                                        .value as
+                                                                    | "sports"
+                                                                    | "portraits";
+
+                                                                const selectedAlbum =
+                                                                    albums.find(
+                                                                        (
+                                                                            album
+                                                                        ) =>
+                                                                            album.id ===
+                                                                            item.album_id
+                                                                    );
+
+                                                                updateMedia(
+                                                                    item.id,
+                                                                    {
+                                                                        gallery,
+                                                                        sport:
+                                                                            gallery ===
+                                                                            "portraits"
+                                                                                ? null
+                                                                                : item.sport,
+                                                                        album_id:
+                                                                            selectedAlbum &&
+                                                                            selectedAlbum.gallery !==
+                                                                                gallery
+                                                                                ? null
+                                                                                : item.album_id,
+                                                                    }
+                                                                );
+                                                            }}
+                                                            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold outline-none focus:border-[#0088ff]"
+                                                        >
+                                                            <option value="sports">
+                                                                Sports
+                                                            </option>
+
+                                                            <option value="portraits">
+                                                                Portraits
+                                                            </option>
+                                                        </select>
+                                                    </div>
+
+                                                    {item.gallery ===
+                                                        "sports" && (
+                                                        <div className="mt-4">
+                                                            <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
+                                                                Sport
+                                                            </label>
+
+                                                            <select
+                                                                value={
+                                                                    customSport
+                                                                        ? "__other__"
+                                                                        : item.sport ||
+                                                                          ""
+                                                                }
+                                                                onChange={(
+                                                                    e
+                                                                ) => {
+                                                                    const value =
+                                                                        e
+                                                                            .target
+                                                                            .value;
+
+                                                                    if (
+                                                                        value ===
+                                                                        "__other__"
+                                                                    ) {
+                                                                        setCustomSports(
+                                                                            (
+                                                                                old
+                                                                            ) => ({
+                                                                                ...old,
+                                                                                [item.id]:
+                                                                                    customSports[
+                                                                                        item
+                                                                                            .id
+                                                                                    ] ||
+                                                                                    "",
+                                                                            })
+                                                                        );
+
+                                                                        return;
+                                                                    }
+
+                                                                    setCustomSports(
+                                                                        (
+                                                                            old
+                                                                        ) => {
+                                                                            const next =
+                                                                                {
+                                                                                    ...old,
+                                                                                };
+
+                                                                            delete next[
+                                                                                item
+                                                                                    .id
+                                                                            ];
+
+                                                                            return next;
+                                                                        }
+                                                                    );
+
+                                                                    updateMedia(
+                                                                        item.id,
+                                                                        {
+                                                                            sport:
+                                                                                value ||
+                                                                                null,
+                                                                        }
+                                                                    );
+                                                                }}
+                                                                className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold outline-none focus:border-[#0088ff]"
+                                                            >
+                                                                <option value="">
+                                                                    Select Sport
+                                                                </option>
+
+                                                                {sports.map(
+                                                                    (
+                                                                        sport
+                                                                    ) => (
+                                                                        <option
+                                                                            key={
+                                                                                sport
+                                                                            }
+                                                                            value={
+                                                                                sport
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                sport
+                                                                            }
+                                                                        </option>
+                                                                    )
+                                                                )}
+
+                                                                <option value="__other__">
+                                                                    Other Sport...
+                                                                </option>
+                                                            </select>
+
+                                                            {customSport ||
+                                                            Object.prototype.hasOwnProperty.call(
+                                                                customSports,
+                                                                item.id
+                                                            ) ? (
+                                                                <div className="mt-2 flex gap-2">
+                                                                    <input
+                                                                        value={
+                                                                            customSports[
+                                                                                item
+                                                                                    .id
+                                                                            ] ||
+                                                                            ""
+                                                                        }
+                                                                        onChange={(
+                                                                            e
+                                                                        ) =>
+                                                                            setCustomSports(
+                                                                                (
+                                                                                    old
+                                                                                ) => ({
+                                                                                    ...old,
+                                                                                    [item.id]:
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                })
+                                                                            )
+                                                                        }
+                                                                        placeholder="Enter sport name"
+                                                                        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm outline-none focus:border-[#0088ff]"
+                                                                    />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            saveCustomSport(
+                                                                                item
+                                                                            )
+                                                                        }
+                                                                        className="rounded-xl bg-[#0088ff] px-4 py-2.5 text-xs font-black"
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="mt-4">
+                                                        <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
+                                                            Group /
+                                                            Album
+                                                        </label>
+
+                                                        <select
+                                                            value={
+                                                                item.album_id ||
+                                                                ""
+                                                            }
+                                                            onChange={(
+                                                                e
+                                                            ) =>
+                                                                updateMedia(
+                                                                    item.id,
+                                                                    {
+                                                                        album_id:
+                                                                            e
+                                                                                .target
+                                                                                .value ||
+                                                                            null,
+                                                                    }
+                                                                )
+                                                            }
+                                                            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold outline-none focus:border-[#0088ff]"
+                                                        >
+                                                            <option value="">
+                                                                No Group
+                                                            </option>
+
+                                                            {albums
+                                                                .filter(
                                                                     (
                                                                         album
                                                                     ) =>
-                                                                        album.id ===
-                                                                        item.album_id
-                                                                );
-
-                                                            updateMedia(
-                                                                item.id,
-                                                                {
-                                                                    gallery,
-                                                                    album_id:
-                                                                        selectedAlbum &&
-                                                                        selectedAlbum.gallery !==
-                                                                            gallery
-                                                                            ? null
-                                                                            : item.album_id,
-                                                                }
-                                                            );
-                                                        }}
-                                                        className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold outline-none focus:border-[#0088ff]"
-                                                    >
-                                                        <option value="sports">
-                                                            Sports
-                                                        </option>
-
-                                                        <option value="portraits">
-                                                            Portraits
-                                                        </option>
-                                                    </select>
-                                                </div>
-
-                                                {/* GROUP */}
-                                                <div className="mt-4">
-                                                    <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                                        Group
-                                                        /
-                                                        Album
-                                                    </label>
-
-                                                    <select
-                                                        value={
-                                                            item.album_id ||
-                                                            ""
-                                                        }
-                                                        onChange={(
-                                                            e
-                                                        ) =>
-                                                            updateMedia(
-                                                                item.id,
-                                                                {
-                                                                    album_id:
-                                                                        e
-                                                                            .target
-                                                                            .value ||
-                                                                        null,
-                                                                }
-                                                            )
-                                                        }
-                                                        className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold outline-none focus:border-[#0088ff]"
-                                                    >
-                                                        <option value="">
-                                                            No
-                                                            Group
-                                                        </option>
-
-                                                        {albums
-                                                            .filter(
-                                                                (
-                                                                    album
-                                                                ) =>
-                                                                    album.gallery ===
-                                                                    item.gallery
-                                                            )
-                                                            .map(
-                                                                (
-                                                                    album
-                                                                ) => (
-                                                                    <option
-                                                                        key={
-                                                                            album.id
-                                                                        }
-                                                                        value={
-                                                                            album.id
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            album.name
-                                                                        }
-                                                                    </option>
+                                                                        album.gallery ===
+                                                                        item.gallery
                                                                 )
-                                                            )}
-                                                    </select>
-                                                </div>
+                                                                .map(
+                                                                    (
+                                                                        album
+                                                                    ) => (
+                                                                        <option
+                                                                            key={
+                                                                                album.id
+                                                                            }
+                                                                            value={
+                                                                                album.id
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                album.name
+                                                                            }
+                                                                        </option>
+                                                                    )
+                                                                )}
+                                                        </select>
+                                                    </div>
 
-                                                {/* PUBLISHING */}
-                                                <div className="mt-4 grid grid-cols-2 gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateMedia(
-                                                                item.id,
-                                                                {
-                                                                    is_featured:
-                                                                        !item.is_featured,
-                                                                }
-                                                            )
-                                                        }
-                                                        className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
-                                                            item.is_featured
-                                                                ? "border-[#0088ff] bg-[#0088ff]/15 text-[#58afff]"
-                                                                : "border-white/10 bg-white/[0.02] text-white/45 hover:text-white"
-                                                        }`}
-                                                    >
-                                                        {item.is_featured
-                                                            ? "★ Featured"
-                                                            : "☆ Featured"}
-                                                    </button>
+                                                    <div className="mt-4 grid grid-cols-2 gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                updateMedia(
+                                                                    item.id,
+                                                                    {
+                                                                        is_featured:
+                                                                            !item.is_featured,
+                                                                    }
+                                                                )
+                                                            }
+                                                            className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                                                                item.is_featured
+                                                                    ? "border-[#0088ff] bg-[#0088ff]/15 text-[#58afff]"
+                                                                    : "border-white/10 bg-white/[0.02] text-white/45 hover:text-white"
+                                                            }`}
+                                                        >
+                                                            {item.is_featured
+                                                                ? "★ Featured"
+                                                                : "☆ Featured"}
+                                                        </button>
 
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateMedia(
-                                                                item.id,
-                                                                {
-                                                                    is_visible:
-                                                                        !item.is_visible,
-                                                                }
-                                                            )
-                                                        }
-                                                        className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
-                                                            item.is_visible
-                                                                ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
-                                                                : "border-white/10 bg-white/[0.02] text-white/35"
-                                                        }`}
-                                                    >
-                                                        {item.is_visible
-                                                            ? "● Visible"
-                                                            : "○ Hidden"}
-                                                    </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                updateMedia(
+                                                                    item.id,
+                                                                    {
+                                                                        is_visible:
+                                                                            !item.is_visible,
+                                                                    }
+                                                                )
+                                                            }
+                                                            className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                                                                item.is_visible
+                                                                    ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
+                                                                    : "border-white/10 bg-white/[0.02] text-white/35"
+                                                            }`}
+                                                        >
+                                                            {item.is_visible
+                                                                ? "● Visible"
+                                                                : "○ Hidden"}
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </article>
-                                    )
+                                            </article>
+                                        );
+                                    }
                                 )}
                             </div>
                         </>
@@ -1307,9 +1655,7 @@ export default function AdminCMS({
                                 >
                                     <Save
                                         className="mr-2 inline"
-                                        size={
-                                            17
-                                        }
+                                        size={17}
                                     />
 
                                     {saving
@@ -1419,10 +1765,9 @@ export default function AdminCMS({
                                     >
                                         <Plus
                                             className="mr-1 inline"
-                                            size={
-                                                15
-                                            }
+                                            size={15}
                                         />
+
                                         Text
                                     </button>
 
@@ -1436,10 +1781,9 @@ export default function AdminCMS({
                                     >
                                         <Plus
                                             className="mr-1 inline"
-                                            size={
-                                                15
-                                            }
+                                            size={15}
                                         />
+
                                         CTA
                                     </button>
                                 </div>
@@ -1478,15 +1822,11 @@ export default function AdminCMS({
                                                 >
                                                     {section.is_visible ? (
                                                         <Eye
-                                                            size={
-                                                                17
-                                                            }
+                                                            size={17}
                                                         />
                                                     ) : (
                                                         <EyeOff
-                                                            size={
-                                                                17
-                                                            }
+                                                            size={17}
                                                         />
                                                     )}
                                                 </button>
@@ -1501,9 +1841,7 @@ export default function AdminCMS({
                                                     className="rounded-lg p-2 hover:bg-white/5"
                                                 >
                                                     <ChevronUp
-                                                        size={
-                                                            17
-                                                        }
+                                                        size={17}
                                                     />
                                                 </button>
 
@@ -1517,9 +1855,7 @@ export default function AdminCMS({
                                                     className="rounded-lg p-2 hover:bg-white/5"
                                                 >
                                                     <ChevronDown
-                                                        size={
-                                                            17
-                                                        }
+                                                        size={17}
                                                     />
                                                 </button>
 
@@ -1532,9 +1868,7 @@ export default function AdminCMS({
                                                     className="rounded-lg p-2 text-red-300 hover:bg-red-500/10"
                                                 >
                                                     <Trash2
-                                                        size={
-                                                            17
-                                                        }
+                                                        size={17}
                                                     />
                                                 </button>
                                             </div>
