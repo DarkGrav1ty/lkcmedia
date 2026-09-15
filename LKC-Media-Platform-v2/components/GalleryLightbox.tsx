@@ -10,6 +10,10 @@ import {
     useEffect,
     useState,
 } from "react";
+import {
+    galleryLightboxUrl,
+    galleryThumbnailUrl,
+} from "@/lib/public-image";
 
 export type GalleryPhoto = {
     id: string;
@@ -41,7 +45,9 @@ function Watermark({
                         }).map(
                             (_, column) => (
                                 <span
-                                    key={column}
+                                    key={
+                                        column
+                                    }
                                     className={`select-none font-black uppercase tracking-[0.24em] text-white ${
                                         large
                                             ? "text-base sm:text-xl md:text-2xl"
@@ -133,7 +139,9 @@ export default function GalleryLightbox({
         ]);
 
     useEffect(() => {
-        if (activeIndex === null) {
+        if (
+            activeIndex === null
+        ) {
             return;
         }
 
@@ -190,14 +198,6 @@ export default function GalleryLightbox({
         previous,
     ]);
 
-    /*
-     * Preload only the images directly
-     * before and after the active image.
-     *
-     * This makes arrow navigation feel
-     * faster without forcing the browser
-     * to download the entire album.
-     */
     useEffect(() => {
         if (
             activeIndex === null ||
@@ -218,17 +218,19 @@ export default function GalleryLightbox({
                 : activeIndex + 1;
 
         const urls = new Set([
-            photos[previousIndex]
-                ?.preview,
-            photos[nextIndex]
-                ?.preview,
+            galleryLightboxUrl(
+                photos[
+                    previousIndex
+                ].preview
+            ),
+            galleryLightboxUrl(
+                photos[
+                    nextIndex
+                ].preview
+            ),
         ]);
 
         urls.forEach((url) => {
-            if (!url) {
-                return;
-            }
-
             const image =
                 new Image();
 
@@ -242,13 +244,14 @@ export default function GalleryLightbox({
         photos,
     ]);
 
-    if (photos.length === 0) {
+    if (
+        photos.length === 0
+    ) {
         return (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-16 text-center">
                 <p className="text-sm text-white/40">
-                    No photos are
-                    currently published
-                    in this gallery.
+                    No photos are currently
+                    published in this gallery.
                 </p>
             </div>
         );
@@ -276,9 +279,9 @@ export default function GalleryLightbox({
                             aria-label={`Open ${photo.title}`}
                         >
                             <img
-                                src={
+                                src={galleryThumbnailUrl(
                                     photo.preview
-                                }
+                                )}
                                 alt={
                                     photo.title
                                 }
@@ -325,16 +328,6 @@ export default function GalleryLightbox({
                         role="dialog"
                         aria-modal="true"
                         aria-label={`${active.title} preview`}
-                        onMouseDown={(
-                            event
-                        ) => {
-                            if (
-                                event.target ===
-                                event.currentTarget
-                            ) {
-                                close();
-                            }
-                        }}
                     >
                         <button
                             type="button"
@@ -392,9 +385,9 @@ export default function GalleryLightbox({
                                     key={
                                         active.id
                                     }
-                                    src={
+                                    src={galleryLightboxUrl(
                                         active.preview
-                                    }
+                                    )}
                                     alt={
                                         active.title
                                     }

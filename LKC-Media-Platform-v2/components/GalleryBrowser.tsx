@@ -5,6 +5,9 @@ import {
     useMemo,
     useState,
 } from "react";
+import {
+    galleryCoverUrl,
+} from "@/lib/public-image";
 
 export type PublicAlbum = {
     id: string;
@@ -77,7 +80,9 @@ export default function GalleryBrowser({
     const [
         activeGallery,
         setActiveGallery,
-    ] = useState<GalleryFilter>("all");
+    ] = useState<GalleryFilter>(
+        "all"
+    );
 
     const [
         activeSport,
@@ -173,8 +178,12 @@ export default function GalleryBrowser({
     ) {
         setActiveGallery(value);
 
-        if (value !== "sports") {
-            setActiveSport("all");
+        if (
+            value !== "sports"
+        ) {
+            setActiveSport(
+                "all"
+            );
         }
     }
 
@@ -259,15 +268,17 @@ export default function GalleryBrowser({
                     {filteredAlbums.map(
                         (album) => (
                             <Link
-                                key={album.id}
+                                key={
+                                    album.id
+                                }
                                 href={`/gallery/${album.slug}`}
                                 className="group relative aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118]"
                             >
                                 {album.cover_url ? (
                                     <img
-                                        src={
+                                        src={galleryCoverUrl(
                                             album.cover_url
-                                        }
+                                        )}
                                         alt={
                                             album.name
                                         }
