@@ -1,60 +1,11 @@
 import Link from "next/link";
-import GalleryLightbox, { GalleryPhoto } from "@/components/GalleryLightbox";
 import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
 import DailyVerse from "@/components/DailyVerse";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-async function cms() {
-  try {
-    const db = getSupabaseAdmin();
-    const [settings, photos] = await Promise.all([
-      db
-        .from("site_settings")
-        .select("site_name,tagline")
-        .eq("id", "main")
-        .single(),
-      db
-        .from("media_assets")
-        .select(
-          "id,file_name,alt_text,width,height,albums!inner(is_private,is_visible,expires_at)",
-        )
-        .eq("is_featured", true)
-        .eq("is_visible", true)
-        .not("preview_path", "is", null)
-        .eq("albums.is_private", false)
-        .eq("albums.is_visible", true)
-        .order("sort_order")
-        .order("id")
-        .limit(12),
-    ]);
-    const featured: GalleryPhoto[] = (photos.data || [])
-      .filter(
-        (m: any) =>
-          !m.albums.expires_at || Date.parse(m.albums.expires_at) > Date.now(),
-      )
-      .map((m) => ({
-        id: m.id,
-        preview: `/api/media/${m.id}`,
-        title: m.alt_text || m.file_name,
-        width: m.width,
-        height: m.height,
-      }));
-    return { settings: settings.data, featured };
-  } catch {
-    return { settings: null, featured: [] as GalleryPhoto[] };
-  }
-}
+export const dynamic = "force-static";
 
-export const dynamic =
-    "force-dynamic";
-
-export default async function Home() {
-    const {
-        settings,
-        featured,
-    } = await cms();
-
+export default function Home() {
     return (
         <main>
             {/* HERO */}
@@ -79,8 +30,7 @@ export default async function Home() {
                 <div className="relative mx-auto flex min-h-[calc(82vh-5rem)] max-w-[1500px] items-end px-5 pb-14 md:min-h-[calc(88vh-5rem)] md:px-10 md:pb-20">
                     <div className="max-w-4xl">
                         <p className="mb-5 text-xs font-black uppercase tracking-[.3em] text-[#45a9ff]">
-                            Sports + Portrait
-                            Photography
+                            Sports + Portrait Photography
                         </p>
 
                         <h1 className="text-5xl font-black uppercase leading-[.88] tracking-[-.055em] sm:text-7xl lg:text-[7rem]">
@@ -90,8 +40,7 @@ export default async function Home() {
                         </h1>
 
                         <p className="mt-6 max-w-xl text-base leading-7 text-white/75 md:text-lg">
-                            {settings?.tagline ||
-                                "Real moments. Lasting memories."}
+                            Real moments. Lasting memories.
                         </p>
 
                         <div className="mt-8 flex flex-wrap gap-3">
@@ -138,38 +87,25 @@ export default async function Home() {
 
                     <div>
                         <p className="text-base leading-8 text-white/60 md:text-lg">
-                            I&apos;m Logan, the
-                            photographer behind
-                            LKC Media. I started
-                            shooting in 2025,
-                            focusing on sports
-                            and portraits and
-                            the moments people
-                            want to remember.
+                            I&apos;m Logan, the photographer behind LKC Media.
+                            I started shooting in 2025, focusing on sports
+                            and portraits and the moments people want to
+                            remember.
                         </p>
 
                         <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith is an
-                            important part of
-                            who I am and shaped
-                            how I approach my
-                            work: serve people
-                            well, work with
-                            purpose, and give
-                            my best to every
-                            shoot. LKC Media is
-                            for everyone,
-                            regardless of
-                            background or
-                            belief.
+                            My faith is an important part of who I am and
+                            shaped how I approach my work: serve people
+                            well, work with purpose, and give my best to
+                            every shoot. LKC Media is for everyone,
+                            regardless of background or belief.
                         </p>
 
                         <div className="mt-8 flex items-center gap-4">
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory ·
-                                Colossians 3:23
+                                For His Glory · Colossians 3:23
                             </p>
                         </div>
                     </div>
@@ -201,23 +137,18 @@ export default async function Home() {
                         </Link>
                     </div>
 
-                    {featured.length >
-                    0 ? (
-                        <GalleryLightbox
-                            photos={
-                                featured
-                            }
-                        />
-                    ) : (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
-                            <p className="text-sm text-white/40">
-                                No featured
-                                work is
-                                currently
-                                published.
-                            </p>
-                        </div>
-                    )}
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
+                        <p className="text-sm text-white/40">
+                            View the latest published work in Galleries.
+                        </p>
+
+                        <Link
+                            href="/gallery"
+                            className="mt-5 inline-block rounded-full border border-white/15 px-5 py-2.5 text-sm font-black transition hover:border-white/40"
+                        >
+                            View Galleries
+                        </Link>
+                    </div>
                 </div>
             </section>
 
@@ -238,18 +169,13 @@ export default async function Home() {
                     </p>
 
                     <h2 className="mt-4 text-5xl font-black uppercase tracking-[-.05em] md:text-7xl">
-                        Let&apos;s Create
-                        Something.
+                        Let&apos;s Create Something.
                     </h2>
 
                     <p className="mx-auto mt-5 max-w-xl leading-7 text-white/50">
-                        Tell me about the
-                        game, portrait
-                        session, date, and
-                        location. Let&apos;s
-                        turn the moment into
-                        something worth
-                        remembering.
+                        Tell me about the game, portrait session, date,
+                        and location. Let&apos;s turn the moment into
+                        something worth remembering.
                     </p>
 
                     <BookingButton className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black transition hover:bg-[#0077df]">
@@ -263,13 +189,11 @@ export default async function Home() {
                 <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 text-center md:flex-row md:text-left">
                     <div>
                         <p className="text-sm font-black uppercase tracking-[.18em] text-white/80">
-                            {settings?.site_name ||
-                                "LKC Media"}
+                            LKC Media
                         </p>
 
                         <p className="mt-1 text-xs text-white/30">
-                            © 2026 LKC Media.
-                            All rights reserved.
+                            © 2026 LKC Media. All rights reserved.
                         </p>
                     </div>
 
