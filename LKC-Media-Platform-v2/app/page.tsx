@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
 import DailyVerse from "@/components/DailyVerse";
@@ -60,14 +60,14 @@ export default function Home() {
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em]">
-                                LKC Media · Arizona
+                                LKC Media Â· Arizona
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* PURPOSE — PRESERVED */}
+            {/* PURPOSE â€” PRESERVED */}
             <section className="relative overflow-hidden border-y border-white/10 px-5 py-24 md:px-10 md:py-32">
                 <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.15fr] lg:items-center">
                     <div>
@@ -105,7 +105,7 @@ export default function Home() {
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory · Colossians 3:23
+                                For His Glory Â· Colossians 3:23
                             </p>
                         </div>
                     </div>
@@ -133,7 +133,7 @@ export default function Home() {
                             href="/gallery"
                             className="text-sm font-black text-white/55 transition hover:text-white"
                         >
-                            All Galleries →
+                            All Galleries â†’
                         </Link>
                     </div>
 
@@ -183,31 +183,6 @@ export default function Home() {
                     </BookingButton>
                 </div>
             </section>
-
-            {/* FOOTER */}
-            <footer className="border-t border-white/10 px-5 py-10">
-                <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 text-center md:flex-row md:text-left">
-                    <div>
-                        <p className="text-sm font-black uppercase tracking-[.18em] text-white/80">
-                            LKC Media
-                        </p>
-
-                        <p className="mt-1 text-xs text-white/30">
-                            © 2026 LKC Media. All rights reserved.
-                        </p>
-                    </div>
-
-                    <div className="text-center md:text-right">
-                        <p className="text-xs font-black uppercase tracking-[.24em] text-[#45a9ff]">
-                            For His Glory.
-                        </p>
-
-                        <p className="mt-1 text-[10px] uppercase tracking-[.2em] text-white/25">
-                            Colossians 3:23
-                        </p>
-                    </div>
-                </div>
-            </footer>
         </main>
     );
 }
