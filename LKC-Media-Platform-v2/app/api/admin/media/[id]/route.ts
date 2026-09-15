@@ -32,11 +32,7 @@ export async function PATCH(
     } = {};
 
     if (body.gallery !== undefined) {
-        if (
-            !["sports", "portraits"].includes(
-                body.gallery
-            )
-        ) {
+        if (!["sports", "portraits"].includes(body.gallery)) {
             return NextResponse.json(
                 { error: "Invalid gallery." },
                 { status: 400 }
@@ -57,15 +53,11 @@ export async function PATCH(
         ) {
             updates.sport = null;
         } else {
-            const sport = String(
-                body.sport
-            ).trim();
+            const sport = String(body.sport).trim();
 
             if (sport.length > 80) {
                 return NextResponse.json(
-                    {
-                        error: "Sport name is too long.",
-                    },
+                    { error: "Sport name is too long." },
                     { status: 400 }
                 );
             }
@@ -101,9 +93,7 @@ export async function PATCH(
 
         if (!Number.isInteger(sortOrder)) {
             return NextResponse.json(
-                {
-                    error: "Invalid sort order.",
-                },
+                { error: "Invalid sort order." },
                 { status: 400 }
             );
         }
@@ -111,13 +101,9 @@ export async function PATCH(
         updates.sort_order = sortOrder;
     }
 
-    if (
-        Object.keys(updates).length === 0
-    ) {
+    if (Object.keys(updates).length === 0) {
         return NextResponse.json(
-            {
-                error: "No valid changes provided.",
-            },
+            { error: "No valid changes provided." },
             { status: 400 }
         );
     }

@@ -209,6 +209,13 @@ export default function AdminCMS({
     >({});
 
     const [
+        customSportOpen,
+        setCustomSportOpen,
+    ] = useState<
+        Record<string, boolean>
+    >({});
+
+    const [
         deletedIds,
         setDeletedIds,
     ] = useState<string[]>([]);
@@ -220,25 +227,33 @@ export default function AdminCMS({
         useState("");
 
     useEffect(() => {
-        const initialCustomSports: Record<
+        const custom: Record<
             string,
             string
+        > = {};
+
+        const open: Record<
+            string,
+            boolean
         > = {};
 
         initialMedia.forEach((item) => {
             if (
                 item.sport &&
-                !isStandardSport(item.sport)
+                !isStandardSport(
+                    item.sport
+                )
             ) {
-                initialCustomSports[
-                    item.id
-                ] = item.sport;
+                custom[item.id] =
+                    item.sport;
+
+                open[item.id] =
+                    true;
             }
         });
 
-        setCustomSports(
-            initialCustomSports
-        );
+        setCustomSports(custom);
+        setCustomSportOpen(open);
     }, [initialMedia]);
 
     useEffect(() => {
@@ -246,9 +261,12 @@ export default function AdminCMS({
             return;
         }
 
-        const timer = setTimeout(() => {
-            setNotice("");
-        }, 2500);
+        const timer = setTimeout(
+            () => {
+                setNotice("");
+            },
+            2500
+        );
 
         return () =>
             clearTimeout(timer);
@@ -278,7 +296,8 @@ export default function AdminCMS({
     const newCount =
         bookings.filter(
             (booking) =>
-                booking.status === "new"
+                booking.status ===
+                "new"
         ).length;
 
     const confirmed =
@@ -653,7 +672,7 @@ export default function AdminCMS({
 
         if (!value) {
             setNotice(
-                "Enter the sport name."
+                "Enter a sport name."
             );
 
             return;
@@ -838,9 +857,7 @@ export default function AdminCMS({
                             </h1>
 
                             <p className="mt-2 text-white/45">
-                                Run LKC
-                                Media from
-                                one place.
+                                Run LKC Media from one place.
                             </p>
 
                             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -890,8 +907,7 @@ export default function AdminCMS({
 
                             <div className="mt-8 rounded-3xl border border-white/10 bg-[#0d1118] p-7">
                                 <h2 className="text-xl font-black">
-                                    Quick
-                                    Actions
+                                    Quick Actions
                                 </h2>
 
                                 <div className="mt-5 flex flex-wrap gap-3">
@@ -903,8 +919,7 @@ export default function AdminCMS({
                                         }
                                         className="rounded-xl bg-[#0088ff] px-5 py-3 font-bold"
                                     >
-                                        Edit
-                                        Website
+                                        Edit Website
                                     </button>
 
                                     <button
@@ -915,8 +930,7 @@ export default function AdminCMS({
                                         }
                                         className="rounded-xl border border-white/10 px-5 py-3 font-bold"
                                     >
-                                        Upload
-                                        Images
+                                        Upload Images
                                     </button>
 
                                     <button
@@ -927,8 +941,7 @@ export default function AdminCMS({
                                         }
                                         className="rounded-xl border border-white/10 px-5 py-3 font-bold"
                                     >
-                                        Manage
-                                        Bookings
+                                        Manage Bookings
                                     </button>
                                 </div>
                             </div>
@@ -943,10 +956,7 @@ export default function AdminCMS({
                             </h1>
 
                             <p className="mt-2 text-white/45">
-                                Update
-                                requests as
-                                you work
-                                them.
+                                Update requests as you work them.
                             </p>
 
                             <div className="mt-8 space-y-4">
@@ -1031,9 +1041,7 @@ export default function AdminCMS({
                                                     ) =>
                                                         updateStatus(
                                                             booking.id,
-                                                            e
-                                                                .target
-                                                                .value
+                                                            e.target.value
                                                         )
                                                     }
                                                     className="h-11 rounded-xl border border-white/10 bg-black/30 px-4 text-sm font-bold capitalize outline-none"
@@ -1071,19 +1079,11 @@ export default function AdminCMS({
                             <div className="flex flex-wrap items-end justify-between gap-4">
                                 <div>
                                     <h1 className="text-4xl font-black">
-                                        Media
-                                        Library
+                                        Media Library
                                     </h1>
 
                                     <p className="mt-2 text-white/45">
-                                        Upload,
-                                        organize,
-                                        group,
-                                        categorize,
-                                        and
-                                        publish
-                                        your
-                                        photography.
+                                        Upload, organize, categorize, group, and publish your photography.
                                     </p>
                                 </div>
 
@@ -1103,9 +1103,7 @@ export default function AdminCMS({
                                             e
                                         ) =>
                                             upload(
-                                                e
-                                                    .target
-                                                    .files?.[0]
+                                                e.target.files?.[0]
                                             )
                                         }
                                     />
@@ -1116,8 +1114,7 @@ export default function AdminCMS({
                                 <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
                                     <div className="flex-1">
                                         <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                            New Group /
-                                            Album
+                                            New Group / Album
                                         </label>
 
                                         <input
@@ -1128,9 +1125,7 @@ export default function AdminCMS({
                                                 e
                                             ) =>
                                                 setNewAlbumName(
-                                                    e
-                                                        .target
-                                                        .value
+                                                    e.target.value
                                                 )
                                             }
                                             placeholder="Example: Canyon View Football"
@@ -1151,9 +1146,7 @@ export default function AdminCMS({
                                                 e
                                             ) =>
                                                 setNewAlbumGallery(
-                                                    e
-                                                        .target
-                                                        .value as
+                                                    e.target.value as
                                                         | "sports"
                                                         | "portraits"
                                                 )
@@ -1184,9 +1177,7 @@ export default function AdminCMS({
                                                 e
                                             ) =>
                                                 setNewAlbumDate(
-                                                    e
-                                                        .target
-                                                        .value
+                                                    e.target.value
                                                 )
                                             }
                                             className="mt-2 block rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm"
@@ -1218,8 +1209,7 @@ export default function AdminCMS({
                                     0 && (
                                     <div className="mt-5">
                                         <p className="mb-3 text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                            Existing
-                                            Groups
+                                            Existing Groups
                                         </p>
 
                                         <div className="flex flex-wrap gap-2">
@@ -1253,10 +1243,11 @@ export default function AdminCMS({
                             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                 {media.map(
                                     (item) => {
-                                        const customSport =
-                                            item.sport &&
-                                            !isStandardSport(
-                                                item.sport
+                                        const hasCustomSport =
+                                            Boolean(
+                                                customSportOpen[
+                                                    item.id
+                                                ]
                                             );
 
                                         return (
@@ -1317,11 +1308,9 @@ export default function AdminCMS({
                                                                 e
                                                             ) => {
                                                                 const gallery =
-                                                                    e
-                                                                        .target
-                                                                        .value as
-                                                                    | "sports"
-                                                                    | "portraits";
+                                                                    e.target.value as
+                                                                        | "sports"
+                                                                        | "portraits";
 
                                                                 const selectedAlbum =
                                                                     albums.find(
@@ -1331,6 +1320,21 @@ export default function AdminCMS({
                                                                             album.id ===
                                                                             item.album_id
                                                                     );
+
+                                                                if (
+                                                                    gallery ===
+                                                                    "portraits"
+                                                                ) {
+                                                                    setCustomSportOpen(
+                                                                        (
+                                                                            old
+                                                                        ) => ({
+                                                                            ...old,
+                                                                            [item.id]:
+                                                                                false,
+                                                                        })
+                                                                    );
+                                                                }
 
                                                                 updateMedia(
                                                                     item.id,
@@ -1371,7 +1375,7 @@ export default function AdminCMS({
 
                                                             <select
                                                                 value={
-                                                                    customSport
+                                                                    hasCustomSport
                                                                         ? "__other__"
                                                                         : item.sport ||
                                                                           ""
@@ -1380,47 +1384,48 @@ export default function AdminCMS({
                                                                     e
                                                                 ) => {
                                                                     const value =
-                                                                        e
-                                                                            .target
-                                                                            .value;
+                                                                        e.target.value;
 
                                                                     if (
                                                                         value ===
                                                                         "__other__"
                                                                     ) {
+                                                                        setCustomSportOpen(
+                                                                            (
+                                                                                old
+                                                                            ) => ({
+                                                                                ...old,
+                                                                                [item.id]:
+                                                                                    true,
+                                                                            })
+                                                                        );
+
                                                                         setCustomSports(
                                                                             (
                                                                                 old
                                                                             ) => ({
                                                                                 ...old,
                                                                                 [item.id]:
-                                                                                    customSports[
-                                                                                        item
-                                                                                            .id
-                                                                                    ] ||
-                                                                                    "",
+                                                                                    isStandardSport(
+                                                                                        item.sport
+                                                                                    )
+                                                                                        ? ""
+                                                                                        : item.sport ||
+                                                                                          "",
                                                                             })
                                                                         );
 
                                                                         return;
                                                                     }
 
-                                                                    setCustomSports(
+                                                                    setCustomSportOpen(
                                                                         (
                                                                             old
-                                                                        ) => {
-                                                                            const next =
-                                                                                {
-                                                                                    ...old,
-                                                                                };
-
-                                                                            delete next[
-                                                                                item
-                                                                                    .id
-                                                                            ];
-
-                                                                            return next;
-                                                                        }
+                                                                        ) => ({
+                                                                            ...old,
+                                                                            [item.id]:
+                                                                                false,
+                                                                        })
                                                                     );
 
                                                                     updateMedia(
@@ -1462,17 +1467,12 @@ export default function AdminCMS({
                                                                 </option>
                                                             </select>
 
-                                                            {customSport ||
-                                                            Object.prototype.hasOwnProperty.call(
-                                                                customSports,
-                                                                item.id
-                                                            ) ? (
+                                                            {hasCustomSport && (
                                                                 <div className="mt-2 flex gap-2">
                                                                     <input
                                                                         value={
                                                                             customSports[
-                                                                                item
-                                                                                    .id
+                                                                                item.id
                                                                             ] ||
                                                                             ""
                                                                         }
@@ -1485,9 +1485,7 @@ export default function AdminCMS({
                                                                                 ) => ({
                                                                                     ...old,
                                                                                     [item.id]:
-                                                                                        e
-                                                                                            .target
-                                                                                            .value,
+                                                                                        e.target.value,
                                                                                 })
                                                                             )
                                                                         }
@@ -1507,14 +1505,13 @@ export default function AdminCMS({
                                                                         Save
                                                                     </button>
                                                                 </div>
-                                                            ) : null}
+                                                            )}
                                                         </div>
                                                     )}
 
                                                     <div className="mt-4">
                                                         <label className="text-[10px] font-black uppercase tracking-[.18em] text-white/35">
-                                                            Group /
-                                                            Album
+                                                            Group / Album
                                                         </label>
 
                                                         <select
@@ -1529,9 +1526,7 @@ export default function AdminCMS({
                                                                     item.id,
                                                                     {
                                                                         album_id:
-                                                                            e
-                                                                                .target
-                                                                                .value ||
+                                                                            e.target.value ||
                                                                             null,
                                                                     }
                                                                 )
@@ -1631,16 +1626,11 @@ export default function AdminCMS({
                             <div className="flex flex-wrap items-end justify-between gap-4">
                                 <div>
                                     <h1 className="text-4xl font-black">
-                                        Website
-                                        Editor
+                                        Website Editor
                                     </h1>
 
                                     <p className="mt-2 text-white/45">
-                                        Change
-                                        content
-                                        without
-                                        touching
-                                        code.
+                                        Change content without touching code.
                                     </p>
                                 </div>
 
@@ -1666,14 +1656,12 @@ export default function AdminCMS({
 
                             <section className="mt-8 rounded-3xl border border-white/10 bg-[#0d1118] p-6">
                                 <h2 className="text-lg font-black">
-                                    Site
-                                    Settings
+                                    Site Settings
                                 </h2>
 
                                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                                     <label className="text-xs font-bold text-white/45">
-                                        SITE
-                                        NAME
+                                        SITE NAME
 
                                         <input
                                             className={`${input} mt-2 text-white`}
@@ -1687,9 +1675,7 @@ export default function AdminCMS({
                                                     {
                                                         ...settings,
                                                         site_name:
-                                                            e
-                                                                .target
-                                                                .value,
+                                                            e.target.value,
                                                     }
                                                 )
                                             }
@@ -1697,8 +1683,7 @@ export default function AdminCMS({
                                     </label>
 
                                     <label className="text-xs font-bold text-white/45">
-                                        CONTACT
-                                        EMAIL
+                                        CONTACT EMAIL
 
                                         <input
                                             className={`${input} mt-2 text-white`}
@@ -1712,9 +1697,7 @@ export default function AdminCMS({
                                                     {
                                                         ...settings,
                                                         contact_email:
-                                                            e
-                                                                .target
-                                                                .value,
+                                                            e.target.value,
                                                     }
                                                 )
                                             }
@@ -1736,9 +1719,7 @@ export default function AdminCMS({
                                                     {
                                                         ...settings,
                                                         tagline:
-                                                            e
-                                                                .target
-                                                                .value,
+                                                            e.target.value,
                                                     }
                                                 )
                                             }
@@ -1749,9 +1730,7 @@ export default function AdminCMS({
 
                             <div className="mt-8 flex items-center justify-between">
                                 <h2 className="text-xl font-black">
-                                    Home
-                                    Page
-                                    Sections
+                                    Home Page Sections
                                 </h2>
 
                                 <div className="flex gap-2">
@@ -1889,9 +1868,7 @@ export default function AdminCMS({
                                                             section.id,
                                                             {
                                                                 title:
-                                                                    e
-                                                                        .target
-                                                                        .value,
+                                                                    e.target.value,
                                                             }
                                                         )
                                                     }
@@ -1912,9 +1889,7 @@ export default function AdminCMS({
                                                             section.id,
                                                             {
                                                                 subtitle:
-                                                                    e
-                                                                        .target
-                                                                        .value,
+                                                                    e.target.value,
                                                             }
                                                         )
                                                     }
@@ -1933,9 +1908,7 @@ export default function AdminCMS({
                                                             section.id,
                                                             {
                                                                 body:
-                                                                    e
-                                                                        .target
-                                                                        .value,
+                                                                    e.target.value,
                                                             }
                                                         )
                                                     }
@@ -1957,9 +1930,7 @@ export default function AdminCMS({
                                                             section.id,
                                                             {
                                                                 image_url:
-                                                                    e
-                                                                        .target
-                                                                        .value,
+                                                                    e.target.value,
                                                             }
                                                         )
                                                     }
@@ -1984,9 +1955,7 @@ export default function AdminCMS({
                                                                     section.id,
                                                                     {
                                                                         button_label:
-                                                                            e
-                                                                                .target
-                                                                                .value,
+                                                                            e.target.value,
                                                                     }
                                                                 )
                                                             }
@@ -2008,9 +1977,7 @@ export default function AdminCMS({
                                                                     section.id,
                                                                     {
                                                                         button_href:
-                                                                            e
-                                                                                .target
-                                                                                .value,
+                                                                            e.target.value,
                                                                     }
                                                                 )
                                                             }
