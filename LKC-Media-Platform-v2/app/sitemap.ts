@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
+import { servicePages } from "@/lib/services";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -7,25 +8,30 @@ export const dynamic = "force-dynamic";
 type AlbumRow = {
   slug: string;
   event_date: string | null;
-  created_at: string | null;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-
   const pages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: `${SITE_URL}/gallery`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/services`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    ...servicePages.map((service) => ({
+      url: `${SITE_URL}/services/${service.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.85,
+    })),
     {
       url: `${SITE_URL}/terms`,
       changeFrequency: "yearly",
@@ -53,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (let offset = 0; ; offset += 500) {
     const { data, error } = await db
       .from("public_album_cards")
-      .select("slug,event_date,created_at")
+      .select("slug,event_date")
       .order("id")
       .range(offset, offset + 499);
 
@@ -66,10 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     pages.push(
       ...albums.map((album) => ({
         url: `${SITE_URL}/gallery/${album.slug}`,
-        lastModified:
-          album.event_date ||
-          album.created_at ||
-          undefined,
+        lastModified: album.event_date || undefined,
         changeFrequency: "monthly" as const,
         priority: 0.8,
       })),
