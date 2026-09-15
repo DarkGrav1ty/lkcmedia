@@ -1,10 +1,7 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const exploreLinks = [
     ["/gallery", "Galleries"],
-    ["/services", "Photography Services"],
-    ["/services/sports-photography", "Sports Photography"],
-    ["/services/portrait-photography", "Portrait Photography"],
 ];
 
 const policyLinks = [

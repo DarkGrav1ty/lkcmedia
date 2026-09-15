@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import BookingButton from "@/components/BookingButton";
 
 export default function Header() {
@@ -35,13 +35,6 @@ export default function Header() {
                         className="transition hover:text-white"
                     >
                         Galleries
-                    </Link>
-
-                    <Link
-                        href="/services"
-                        className="hidden transition hover:text-white sm:block"
-                    >
-                        Services
                     </Link>
 
                     <Link

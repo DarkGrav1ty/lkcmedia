@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { activeAlbum } from "@/lib/client-auth";
@@ -97,7 +97,7 @@ function galleryDescription(
       ? ` photographed on ${album.event_date}`
       : "";
 
-  return `${album.name} — ${type}${date} by LKC Media in Arizona. View the published photo gallery.`;
+  return `${album.name} â€” ${type}${date} by LKC Media in Arizona. View the published photo gallery.`;
 }
 
 export async function generateMetadata({
@@ -189,16 +189,6 @@ export default async function Page({
 
   const description =
     galleryDescription(album);
-
-  const serviceHref =
-    album.gallery === "portraits"
-      ? "/services/portrait-photography"
-      : "/services/sports-photography";
-
-  const serviceLabel =
-    album.gallery === "portraits"
-      ? "Arizona Portrait Photography"
-      : "Arizona Sports Photography";
 
   const structuredData = [
     {
@@ -297,7 +287,7 @@ export default async function Page({
     <main className="page-shell">
       <nav aria-label="Breadcrumb">
         <Link href="/gallery">
-          ← All galleries
+          â† All galleries
         </Link>
       </nav>
 
@@ -326,18 +316,6 @@ export default async function Page({
 
         <p className="mt-4 max-w-3xl text-slate-300">
           {description}
-        </p>
-
-        <p className="mt-5 text-sm text-white/50">
-          Looking for this type
-          of coverage?{" "}
-
-          <Link
-            href={serviceHref}
-            className="font-bold text-[#45a9ff] transition hover:text-white"
-          >
-            {serviceLabel}
-          </Link>
         </p>
       </header>
 
