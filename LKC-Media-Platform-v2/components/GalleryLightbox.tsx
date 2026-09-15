@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { ShoppingBag, X } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    X,
+} from "lucide-react";
+import {
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 
 export type GalleryPhoto = {
     id: string;
     preview: string;
     title: string;
-    price: number;
     aspect?: "landscape" | "portrait";
 };
 
@@ -16,125 +23,206 @@ export default function GalleryLightbox({
 }: {
     photos: GalleryPhoto[];
 }) {
-    const [active, setActive] = useState<GalleryPhoto | null>(null);
-    const [buying, setBuying] = useState(false);
+    const [activeIndex, setActiveIndex] =
+        useState<number | null>(null);
 
-    async function buyPhoto(photo: GalleryPhoto) {
-        setBuying(true);
+    const active =
+        activeIndex !== null
+            ? photos[activeIndex]
+            : null;
 
-        try {
-            const response = await fetch("/api/checkout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    photoId: photo.id,
-                }),
-            });
+    const close = useCallback(() => {
+        setActiveIndex(null);
+    }, []);
 
-            const data = await response.json();
+    const previous = useCallback(() => {
+        if (
+            activeIndex === null ||
+            photos.length === 0
+        ) {
+            return;
+        }
 
-            if (!response.ok) {
-                alert(data.error ?? "Checkout is not configured yet.");
-                return;
+        setActiveIndex(
+            activeIndex === 0
+                ? photos.length - 1
+                : activeIndex - 1
+        );
+    }, [activeIndex, photos.length]);
+
+    const next = useCallback(() => {
+        if (
+            activeIndex === null ||
+            photos.length === 0
+        ) {
+            return;
+        }
+
+        setActiveIndex(
+            activeIndex === photos.length - 1
+                ? 0
+                : activeIndex + 1
+        );
+    }, [activeIndex, photos.length]);
+
+    useEffect(() => {
+        if (activeIndex === null) {
+            return;
+        }
+
+        function handleKeyDown(
+            event: KeyboardEvent
+        ) {
+            if (event.key === "Escape") {
+                close();
             }
 
-            window.location.href = data.url;
-        } finally {
-            setBuying(false);
+            if (event.key === "ArrowLeft") {
+                previous();
+            }
+
+            if (event.key === "ArrowRight") {
+                next();
+            }
         }
+
+        const originalOverflow =
+            document.body.style.overflow;
+
+        document.body.style.overflow = "hidden";
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+        return () => {
+            document.body.style.overflow =
+                originalOverflow;
+
+            window.removeEventListener(
+                "keydown",
+                handleKeyDown
+            );
+        };
+    }, [
+        activeIndex,
+        close,
+        next,
+        previous,
+    ]);
+
+    if (photos.length === 0) {
+        return (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-16 text-center">
+                <p className="text-sm text-white/40">
+                    No photos are currently published
+                    in this gallery.
+                </p>
+            </div>
+        );
     }
 
     return (
         <>
-            <div className="photo-grid">
-                {photos.map((photo) => (
+            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+                {photos.map((photo, index) => (
                     <button
                         key={photo.id}
-                        onClick={() => setActive(photo)}
-                        className="group relative w-full overflow-hidden rounded-2xl bg-[#0d1118] text-left"
+                        type="button"
+                        onClick={() =>
+                            setActiveIndex(index)
+                        }
+                        className="group relative mb-4 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118] text-left"
                     >
                         <img
                             src={photo.preview}
                             alt={photo.title}
+                            loading="lazy"
+                            decoding="async"
                             className="h-auto w-full transition duration-500 group-hover:scale-[1.015]"
                         />
 
-                        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                            <span className="-rotate-12 select-none text-lg font-black tracking-[0.28em] text-white/18">
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent opacity-70 transition duration-300 group-hover:opacity-90" />
+
+                        <div className="pointer-events-none absolute inset-0 grid place-items-center overflow-hidden">
+                            <span className="-rotate-12 select-none whitespace-nowrap text-sm font-black tracking-[0.28em] text-white/15 sm:text-base">
                                 LKC MEDIA • PREVIEW
                             </span>
                         </div>
 
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-5 pt-20">
-                            <div className="flex items-end justify-between gap-4">
-                                <span className="font-bold">{photo.title}</span>
-                                <span className="text-sm font-black text-[#3ca5ff]">
-                                    ${photo.price}
-                                </span>
-                            </div>
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5 pt-20">
+                            <p className="truncate text-sm font-bold text-white/85">
+                                {photo.title}
+                            </p>
                         </div>
                     </button>
                 ))}
             </div>
 
-            {active && (
+            {active && activeIndex !== null && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/95 p-4 backdrop-blur-md md:p-8"
+                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md"
                     role="dialog"
                     aria-modal="true"
+                    aria-label={`${active.title} preview`}
                 >
                     <button
-                        onClick={() => setActive(null)}
-                        className="absolute right-5 top-5 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 transition hover:bg-white/20"
-                        aria-label="Close"
+                        type="button"
+                        onClick={close}
+                        className="absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-black/60 text-white transition hover:bg-white/15 md:right-6 md:top-6"
+                        aria-label="Close photo"
                     >
-                        <X />
+                        <X size={20} />
                     </button>
 
-                    <div className="mx-auto grid h-full max-w-7xl items-center gap-5 lg:grid-cols-[1fr_300px]">
-                        <div className="relative flex max-h-[88vh] items-center justify-center overflow-hidden rounded-2xl bg-[#0a0c10]">
+                    {photos.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={previous}
+                                className="absolute left-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-black/60 text-white transition hover:bg-white/15 md:left-6"
+                                aria-label="Previous photo"
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={next}
+                                className="absolute right-3 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-black/60 text-white transition hover:bg-white/15 md:right-6"
+                                aria-label="Next photo"
+                            >
+                                <ChevronRight size={24} />
+                            </button>
+                        </>
+                    )}
+
+                    <div className="flex h-full w-full items-center justify-center px-4 py-20 md:px-24">
+                        <div className="relative flex max-h-full max-w-7xl items-center justify-center overflow-hidden rounded-xl bg-[#080a0e]">
                             <img
                                 src={active.preview}
                                 alt={active.title}
-                                className="max-h-[88vh] max-w-full object-contain"
+                                className="max-h-[82vh] max-w-full object-contain"
                             />
 
-                            <span className="pointer-events-none absolute -rotate-12 select-none text-2xl font-black tracking-[0.3em] text-white/18 md:text-4xl">
-                                LKC MEDIA • PREVIEW
-                            </span>
-                        </div>
-
-                        <aside className="rounded-2xl border border-white/10 bg-[#10151d] p-6">
-                            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#0088ff]">
-                                Digital Download
-                            </p>
-
-                            <h2 className="mt-3 text-2xl font-black">
-                                {active.title}
-                            </h2>
-
-                            <p className="mt-3 text-sm leading-6 text-white/55">
-                                Purchase the full-resolution, unwatermarked image.
-                            </p>
-
-                            <div className="my-7 h-px bg-white/10" />
-
-                            <div className="flex items-end justify-between">
-                                <span className="text-sm text-white/45">Single photo</span>
-                                <strong className="text-3xl">${active.price}</strong>
+                            <div className="pointer-events-none absolute inset-0 grid place-items-center overflow-hidden">
+                                <span className="-rotate-12 select-none whitespace-nowrap text-xl font-black tracking-[0.3em] text-white/15 md:text-4xl">
+                                    LKC MEDIA • PREVIEW
+                                </span>
                             </div>
+                        </div>
+                    </div>
 
-                            <button
-                                onClick={() => buyPhoto(active)}
-                                disabled={buying}
-                                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0088ff] px-5 py-4 font-black transition hover:bg-[#0077df] disabled:opacity-50"
-                            >
-                                <ShoppingBag size={18} />
-                                {buying ? "Opening..." : "Buy Photo"}
-                            </button>
-                        </aside>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
+                        <p className="text-sm font-bold text-white/70">
+                            {active.title}
+                        </p>
+
+                        <p className="mt-1 text-xs text-white/30">
+                            {activeIndex + 1} /{" "}
+                            {photos.length}
+                        </p>
                     </div>
                 </div>
             )}

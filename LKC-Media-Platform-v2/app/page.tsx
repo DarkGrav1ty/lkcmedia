@@ -65,7 +65,6 @@ async function cms() {
                     /\.[^/.]+$/,
                     ""
                 ),
-                price: 0,
             }));
 
         return {
