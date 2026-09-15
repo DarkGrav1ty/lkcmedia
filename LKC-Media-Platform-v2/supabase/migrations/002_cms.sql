@@ -1,4 +1,11 @@
 -- LKC Media CMS foundation
+create table if not exists public.bookings (
+ id uuid primary key default gen_random_uuid(), status text not null default 'new',
+ name text not null, email text not null, instagram text, shoot_type text not null,
+ sport text, shoot_date date not null, location_name text not null, location_address text not null,
+ location_latitude double precision, location_longitude double precision, package text, details text not null,
+ created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
 create table if not exists public.site_settings (
     id text primary key default 'main',
     site_name text not null default 'LKC Media',

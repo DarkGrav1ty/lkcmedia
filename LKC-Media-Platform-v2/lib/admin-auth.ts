@@ -1,37 +1,36 @@
-import crypto from "crypto";
+import "server-only";
 import { cookies } from "next/headers";
-
-const COOKIE_NAME = "lkc_admin_session";
-const SESSION_SECONDS = 60 * 60 * 24 * 7;
-
-function secret() {
-    return process.env.ADMIN_PASSWORD || "";
-}
-
-function signature(expires: string) {
-    return crypto.createHmac("sha256", secret()).update(expires).digest("hex");
-}
-
-export function createAdminSessionValue() {
-    const expires = String(Math.floor(Date.now() / 1000) + SESSION_SECONDS);
-    return `${expires}.${signature(expires)}`;
-}
-
-export function verifyAdminSessionValue(value?: string) {
-    if (!value || !secret()) return false;
-    const [expires, supplied] = value.split(".");
-    if (!expires || !supplied || Number(expires) < Math.floor(Date.now() / 1000)) return false;
-    const expected = signature(expires);
-    if (expected.length !== supplied.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
-}
-
-export async function isAdminAuthenticated() {
-    const store = await cookies();
-    return verifyAdminSessionValue(store.get(COOKIE_NAME)?.value);
-}
-
+import { equal, sign } from "./security";
+const SESSION_SECONDS = 60 * 60 * 12;
 export const adminCookie = {
-    name: COOKIE_NAME,
-    maxAge: SESSION_SECONDS,
+  name: "lkc_admin_session",
+  maxAge: SESSION_SECONDS,
 };
+export function createAdminSessionValue() {
+  const expiry = String(Math.floor(Date.now() / 1000) + SESSION_SECONDS);
+  return `${expiry}.${sign(`admin:${expiry}:${process.env.ADMIN_PASSWORD}`)}`;
+}
+export function verifyAdminSessionValue(value?: string) {
+  if (!value || !process.env.ADMIN_PASSWORD) return false;
+  const parts = value.split(".");
+  if (parts.length !== 2 || !/^\d{10}$/.test(parts[0])) return false;
+  const expires = Number(parts[0]);
+  if (
+    expires <= Date.now() / 1000 ||
+    expires > Date.now() / 1000 + SESSION_SECONDS
+  )
+    return false;
+  try {
+    return equal(
+      parts[1],
+      sign(`admin:${parts[0]}:${process.env.ADMIN_PASSWORD}`),
+    );
+  } catch {
+    return false;
+  }
+}
+export async function isAdminAuthenticated() {
+  return verifyAdminSessionValue(
+    (await cookies()).get(adminCookie.name)?.value,
+  );
+}

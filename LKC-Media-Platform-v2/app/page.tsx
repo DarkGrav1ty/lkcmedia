@@ -1,116 +1,49 @@
 import Link from "next/link";
-import GalleryLightbox, {
-    GalleryPhoto,
-} from "@/components/GalleryLightbox";
+import GalleryLightbox, { GalleryPhoto } from "@/components/GalleryLightbox";
 import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
 import DailyVerse from "@/components/DailyVerse";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-type MediaAsset = {
-    id: string;
-    file_name: string;
-    public_url: string;
-    gallery: "sports" | "portraits";
-    is_featured: boolean;
-    is_visible: boolean;
-    sort_order: number;
-    created_at: string;
-};
-
 async function cms() {
-    try {
-        const db =
-            getSupabaseAdmin();
-
-        const [
-            settingsResult,
-            featuredResult,
-        ] = await Promise.all([
-            db
-                .from(
-                    "site_settings"
-                )
-                .select("*")
-                .eq(
-                    "id",
-                    "main"
-                )
-                .single(),
-
-            db
-                .from(
-                    "media_assets"
-                )
-                .select(
-                    "id, file_name, public_url, gallery, is_featured, is_visible, sort_order, created_at"
-                )
-                .eq(
-                    "is_featured",
-                    true
-                )
-                .eq(
-                    "is_visible",
-                    true
-                )
-                .order(
-                    "sort_order",
-                    {
-                        ascending: true,
-                    }
-                )
-                .order(
-                    "created_at",
-                    {
-                        ascending: false,
-                    }
-                ),
-        ]);
-
-        if (
-            featuredResult.error
-        ) {
-            console.error(
-                "Could not load featured media:",
-                featuredResult.error
-                    .message
-            );
-        }
-
-        const featuredMedia =
-            (featuredResult.data ||
-                []) as MediaAsset[];
-
-        const featured: GalleryPhoto[] =
-            featuredMedia.map(
-                (photo) => ({
-                    id: photo.id,
-                    preview:
-                        photo.public_url,
-                    title: photo.file_name.replace(
-                        /\.[^/.]+$/,
-                        ""
-                    ),
-                })
-            );
-
-        return {
-            settings:
-                settingsResult.data,
-            featured,
-        };
-    } catch (error) {
-        console.error(
-            "Homepage CMS error:",
-            error
-        );
-
-        return {
-            settings: null,
-            featured:
-                [] as GalleryPhoto[],
-        };
-    }
+  try {
+    const db = getSupabaseAdmin();
+    const [settings, photos] = await Promise.all([
+      db
+        .from("site_settings")
+        .select("site_name,tagline")
+        .eq("id", "main")
+        .single(),
+      db
+        .from("media_assets")
+        .select(
+          "id,file_name,alt_text,width,height,albums!inner(is_private,is_visible,expires_at)",
+        )
+        .eq("is_featured", true)
+        .eq("is_visible", true)
+        .not("preview_path", "is", null)
+        .eq("albums.is_private", false)
+        .eq("albums.is_visible", true)
+        .order("sort_order")
+        .order("id")
+        .limit(12),
+    ]);
+    const featured: GalleryPhoto[] = (photos.data || [])
+      .filter(
+        (m: any) =>
+          !m.albums.expires_at || Date.parse(m.albums.expires_at) > Date.now(),
+      )
+      .map((m) => ({
+        id: m.id,
+        preview: `/api/media/${m.id}`,
+        title: m.alt_text || m.file_name,
+        width: m.width,
+        height: m.height,
+      }));
+    return { settings: settings.data, featured };
+  } catch {
+    return { settings: null, featured: [] as GalleryPhoto[] };
+  }
 }
 
 export const dynamic =

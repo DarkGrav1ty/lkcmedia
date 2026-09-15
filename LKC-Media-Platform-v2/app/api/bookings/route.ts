@@ -1,3 +1,6 @@
+import { validateBooking } from "@/lib/booking-validation";
+import { POLICY_VERSION } from "@/lib/site";
+import { fail, jsonBody, rateLimit } from "@/lib/security";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -6,240 +9,220 @@ const OWNER_EMAIL = "logancasey737@gmail.com";
 const FROM_EMAIL = "LKC Media <bookings@lkcmedia-az.com>";
 
 type EmailPayload = {
-    from: string;
-    to: string[];
-    subject: string;
-    html: string;
-    reply_to?: string;
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+  reply_to?: string;
 };
 
 async function sendEmail(payload: EmailPayload) {
-    const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
 
-    if (!apiKey) {
-        console.error("RESEND_API_KEY is not configured.");
+  if (!apiKey) {
+    console.error("RESEND_API_KEY is not configured.");
 
-        return {
-            success: false,
-            error: "Email service is not configured.",
-        };
+    return {
+      success: false,
+      error: "Email service is not configured.",
+    };
+  }
+
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(12000),
+    });
+
+    if (!response.ok) {
+      const errorText = "Email provider rejected the request.";
+
+      console.error("Resend email error:", response.status, errorText);
+
+      return {
+        success: false,
+        error: errorText,
+      };
     }
 
-    try {
-        const response = await fetch(RESEND_API_URL, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-        });
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Resend request failed:", error);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-
-            console.error(
-                "Resend email error:",
-                response.status,
-                errorText
-            );
-
-            return {
-                success: false,
-                error: errorText,
-            };
-        }
-
-        return {
-            success: true,
-        };
-    } catch (error) {
-        console.error("Resend request failed:", error);
-
-        return {
-            success: false,
-            error: String(error),
-        };
-    }
+    return {
+      success: false,
+      error: String(error),
+    };
+  }
 }
 
 function escapeHtml(value: unknown) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json();
+  try {
+    const body = await jsonBody(request);
+    const validationError = validateBooking(body);
+    if (validationError) return fail(validationError);
+    if (!(await rateLimit(request, "booking", 5, 3600)))
+      return fail("Too many requests. Please try again later.", 429);
 
-        const {
-            name,
-            email,
-            instagram,
-            shootType,
-            sport,
-            date,
-            package: selectedPackage,
-            details,
-            location,
-        } = body;
+    const {
+      name,
+      email,
+      instagram,
+      shootType,
+      sport,
+      date,
+      package: selectedPackage,
+      details,
+      location,
+    } = body;
 
-        if (
-            !name ||
-            !email ||
-            !shootType ||
-            !date ||
-            !details ||
-            !location?.name ||
-            !location?.address ||
-            location?.latitude == null ||
-            location?.longitude == null
-        ) {
-            return NextResponse.json(
-                {
-                    error: "Missing required booking information.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
+    if (
+      !name ||
+      !email ||
+      !shootType ||
+      !date ||
+      !details ||
+      !location?.name ||
+      !location?.address
+    ) {
+      return NextResponse.json(
+        {
+          error: "Missing required booking information.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
-        if (
-            shootType !== "Sports" &&
-            shootType !== "Portraits"
-        ) {
-            return NextResponse.json(
-                {
-                    error: "Invalid shoot type.",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
+    if (shootType !== "Sports" && shootType !== "Portraits") {
+      return NextResponse.json(
+        {
+          error: "Invalid shoot type.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
-        const cleanName = String(name).trim();
-        const cleanEmail = String(email).trim();
-        const cleanInstagram = instagram
-            ? String(instagram).trim()
-            : null;
+    const cleanName = String(name).trim();
+    const cleanEmail = String(email).trim();
+    const cleanInstagram = instagram ? String(instagram).trim() : null;
 
-        const cleanSport = sport
-            ? String(sport).trim()
-            : null;
+    const cleanSport = sport ? String(sport).trim() : null;
 
-        const cleanPackage = selectedPackage
-            ? String(selectedPackage).trim()
-            : null;
+    const cleanPackage = selectedPackage
+      ? String(selectedPackage).trim()
+      : null;
 
-        const cleanDetails = String(details).trim();
-        const cleanLocationName = String(
-            location.name
-        ).trim();
+    const cleanDetails = String(details).trim();
+    const cleanLocationName = String(location.name).trim();
 
-        const cleanLocationAddress = String(
-            location.address
-        ).trim();
+    const cleanLocationAddress = String(location.address).trim();
 
-        const supabaseUrl =
-            process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-        const supabaseSecret =
-            process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        if (!supabaseUrl || !supabaseSecret) {
-            console.error(
-                "Supabase environment variables are missing."
-            );
+    if (!supabaseUrl || !supabaseSecret) {
+      console.error("Supabase environment variables are missing.");
 
-            return NextResponse.json(
-                {
-                    error: "Server configuration error.",
-                },
-                {
-                    status: 500,
-                }
-            );
-        }
+      return NextResponse.json(
+        {
+          error: "Server configuration error.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
 
-        const supabase = createClient(
-            supabaseUrl,
-            supabaseSecret,
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false,
-                },
-            }
-        );
+    const supabase = createClient(supabaseUrl, supabaseSecret, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
 
-        /*
-         * Save the booking FIRST.
-         *
-         * Email failure must never cause a valid booking
-         * request to disappear.
-         */
-        const { data, error } = await supabase
-            .from("bookings")
-            .insert({
-                status: "new",
+    /*
+     * Save the booking FIRST.
+     *
+     * Email failure must never cause a valid booking
+     * request to disappear.
+     */
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert({
+        status: "new",
 
-                name: cleanName,
-                email: cleanEmail,
-                instagram: cleanInstagram,
+        name: cleanName,
+        email: cleanEmail,
+        instagram: cleanInstagram,
 
-                shoot_type: shootType,
-                sport: cleanSport,
-                shoot_date: date,
+        shoot_type: shootType,
+        sport: cleanSport,
+        shoot_date: date,
 
-                location_name: cleanLocationName,
-                location_address: cleanLocationAddress,
+        location_name: cleanLocationName,
+        location_address: cleanLocationAddress,
 
-                location_latitude:
-                    Number(location.latitude),
+        location_latitude:
+          location.latitude == null ? null : Number(location.latitude),
 
-                location_longitude:
-                    Number(location.longitude),
+        location_longitude:
+          location.longitude == null ? null : Number(location.longitude),
 
-                package: cleanPackage,
-                details: cleanDetails,
-            })
-            .select("id")
-            .single();
+        package: cleanPackage,
+        details: cleanDetails,
+        terms_accepted_at: new Date().toISOString(),
+        media_policy_accepted_at: new Date().toISOString(),
+        policy_version: POLICY_VERSION,
+        media_consent: body.mediaConsent === true,
+      })
+      .select("id")
+      .single();
 
-        if (error) {
-            console.error(
-                "Supabase booking insert error:",
-                error
-            );
+    if (error) {
+      console.error("Supabase booking insert error:", error);
 
-            return NextResponse.json(
-                {
-                    error: "Unable to save booking request.",
-                },
-                {
-                    status: 500,
-                }
-            );
-        }
+      return NextResponse.json(
+        {
+          error: "Unable to save booking request.",
+        },
+        {
+          status: 500,
+        },
+      );
+    }
 
-        /*
-         * Email Logan.
-         */
-        const ownerEmail = sendEmail({
-            from: FROM_EMAIL,
-            to: [OWNER_EMAIL],
-            reply_to: cleanEmail,
+    /*
+     * Email Logan.
+     */
+    const ownerEmail = sendEmail({
+      from: FROM_EMAIL,
+      to: [OWNER_EMAIL],
+      reply_to: cleanEmail,
 
-            subject:
-                `New LKC Media Booking — ${cleanName}`,
+      subject: `New LKC Media Booking — ${cleanName}`,
 
-            html: `
+      html: `
                 <div
                     style="
                         background:#07090d;
@@ -293,9 +276,7 @@ export async function POST(request: Request) {
 
                             <p>
                                 <strong>Instagram:</strong>
-                                ${escapeHtml(
-                                    cleanInstagram || "Not provided"
-                                )}
+                                ${escapeHtml(cleanInstagram || "Not provided")}
                             </p>
 
                             <p>
@@ -305,9 +286,7 @@ export async function POST(request: Request) {
 
                             <p>
                                 <strong>Sport:</strong>
-                                ${escapeHtml(
-                                    cleanSport || "N/A"
-                                )}
+                                ${escapeHtml(cleanSport || "N/A")}
                             </p>
 
                             <p>
@@ -317,19 +296,14 @@ export async function POST(request: Request) {
 
                             <p>
                                 <strong>Package:</strong>
-                                ${escapeHtml(
-                                    cleanPackage ||
-                                    "Not selected"
-                                )}
+                                ${escapeHtml(cleanPackage || "Not selected")}
                             </p>
 
                             <p>
                                 <strong>Location:</strong><br />
                                 ${escapeHtml(cleanLocationName)}
                                 <br />
-                                ${escapeHtml(
-                                    cleanLocationAddress
-                                )}
+                                ${escapeHtml(cleanLocationAddress)}
                             </p>
 
                             <p>
@@ -356,20 +330,19 @@ export async function POST(request: Request) {
                     </div>
                 </div>
             `,
-        });
+    });
 
-        /*
-         * Email the customer.
-         */
-        const customerEmail = sendEmail({
-            from: FROM_EMAIL,
-            to: [cleanEmail],
-            reply_to: OWNER_EMAIL,
+    /*
+     * Email the customer.
+     */
+    const customerEmail = sendEmail({
+      from: FROM_EMAIL,
+      to: [cleanEmail],
+      reply_to: OWNER_EMAIL,
 
-            subject:
-                "We received your LKC Media booking request",
+      subject: "We received your LKC Media booking request",
 
-            html: `
+      html: `
                 <div
                     style="
                         background:#07090d;
@@ -443,10 +416,7 @@ export async function POST(request: Request) {
 
                             <p>
                                 <strong>Package:</strong>
-                                ${escapeHtml(
-                                    cleanPackage ||
-                                    "Not selected"
-                                )}
+                                ${escapeHtml(cleanPackage || "Not selected")}
                             </p>
                         </div>
 
@@ -475,53 +445,46 @@ export async function POST(request: Request) {
                     </div>
                 </div>
             `,
-        });
+    });
 
-        /*
-         * Run both emails without allowing an email problem
-         * to undo the successfully stored booking.
-         */
-        const emailResults = await Promise.allSettled([
-            ownerEmail,
-            customerEmail,
-        ]);
+    /*
+     * Run both emails without allowing an email problem
+     * to undo the successfully stored booking.
+     */
+    const emailResults = await Promise.allSettled([ownerEmail, customerEmail]);
 
-        for (const result of emailResults) {
-            if (result.status === "rejected") {
-                console.error(
-                    "Booking email promise rejected:",
-                    result.reason
-                );
-            } else if (!result.value.success) {
-                console.error(
-                    "Booking email delivery failed:",
-                    result.value.error
-                );
-            }
-        }
-
-        return NextResponse.json(
-            {
-                success: true,
-                bookingId: data.id,
-            },
-            {
-                status: 201,
-            }
-        );
-    } catch (error) {
-        console.error(
-            "Booking API error:",
-            error
-        );
-
-        return NextResponse.json(
-            {
-                error: "Unable to process booking request.",
-            },
-            {
-                status: 500,
-            }
-        );
+    const sent = emailResults.map(
+      (r) => r.status === "fulfilled" && r.value.success,
+    );
+    // Reporting failure must also never turn a persisted booking into an HTTP error.
+    try {
+      await supabase
+        .from("bookings")
+        .update({ email_owner_sent: sent[0], email_customer_sent: sent[1] })
+        .eq("id", data.id);
+    } catch {
+      /* booking already saved */
     }
+
+    return NextResponse.json(
+      {
+        success: true,
+        bookingId: data.id,
+      },
+      {
+        status: 201,
+      },
+    );
+  } catch (error) {
+    console.error("Booking API error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Unable to process booking request.",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
 }

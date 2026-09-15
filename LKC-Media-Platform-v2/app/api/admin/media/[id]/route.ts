@@ -1,130 +1,136 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
-type RouteContext = {
-    params: Promise<{
-        id: string;
-    }>;
-};
-
-export async function PATCH(
-    request: Request,
-    context: RouteContext
-) {
-    if (!(await isAdminAuthenticated())) {
-        return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
-        );
+import { mediaFields, mediaDTO } from "@/lib/media";
+import { fail, jsonBody, privateHeaders, uuid } from "@/lib/security";
+import { imageBytes } from "@/lib/upload";
+type Context = { params: Promise<{ id: string }> };
+export async function PATCH(request: Request, { params }: Context) {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
+    const { id } = await params;
+    if (!uuid(id)) return fail("Invalid photo.");
+    const b = await jsonBody(request);
+    const u: Record<string, unknown> = {};
+    for (const k of ["is_featured", "is_visible"])
+      if (b[k] !== undefined) {
+        if (typeof b[k] !== "boolean") return fail("Invalid visibility.");
+        u[k] = b[k];
+      }
+    for (const k of ["sport", "alt_text"])
+      if (b[k] !== undefined) {
+        if (typeof b[k] !== "string" || b[k].length > 240)
+          return fail("Text is too long.");
+        u[k] = b[k].trim();
+      }
+    if (b.sort_order !== undefined) {
+      if (
+        !Number.isSafeInteger(b.sort_order) ||
+        Math.abs(b.sort_order) > 100000
+      )
+        return fail("Invalid order.");
+      u.sort_order = b.sort_order;
     }
-
-    const { id } = await context.params;
-    const body = await request.json();
-
-    const updates: {
-        album_id?: string | null;
-        gallery?: "sports" | "portraits";
-        sport?: string | null;
-        is_featured?: boolean;
-        is_visible?: boolean;
-        sort_order?: number;
-    } = {};
-
-    if (body.gallery !== undefined) {
-        if (!["sports", "portraits"].includes(body.gallery)) {
-            return NextResponse.json(
-                { error: "Invalid gallery." },
-                { status: 400 }
-            );
-        }
-
-        updates.gallery = body.gallery;
-
-        if (body.gallery === "portraits") {
-            updates.sport = null;
-        }
-    }
-
-    if (body.sport !== undefined) {
-        if (
-            body.sport === null ||
-            String(body.sport).trim() === ""
-        ) {
-            updates.sport = null;
-        } else {
-            const sport = String(body.sport).trim();
-
-            if (sport.length > 80) {
-                return NextResponse.json(
-                    { error: "Sport name is too long." },
-                    { status: 400 }
-                );
-            }
-
-            updates.sport = sport;
-        }
-    }
-
-    if (body.album_id !== undefined) {
-        updates.album_id =
-            body.album_id === null ||
-            body.album_id === ""
-                ? null
-                : String(body.album_id);
-    }
-
-    if (body.is_featured !== undefined) {
-        updates.is_featured = Boolean(
-            body.is_featured
-        );
-    }
-
-    if (body.is_visible !== undefined) {
-        updates.is_visible = Boolean(
-            body.is_visible
-        );
-    }
-
-    if (body.sort_order !== undefined) {
-        const sortOrder = Number(
-            body.sort_order
-        );
-
-        if (!Number.isInteger(sortOrder)) {
-            return NextResponse.json(
-                { error: "Invalid sort order." },
-                { status: 400 }
-            );
-        }
-
-        updates.sort_order = sortOrder;
-    }
-
-    if (Object.keys(updates).length === 0) {
-        return NextResponse.json(
-            { error: "No valid changes provided." },
-            { status: 400 }
-        );
-    }
-
     const db = getSupabaseAdmin();
-
-    const { data, error } = await db
-        .from("media_assets")
-        .update(updates)
-        .eq("id", id)
-        .select("*")
+    if (b.album_id !== undefined) {
+      if (!uuid(b.album_id)) return fail("Choose an album.");
+      const { data: a } = await db
+        .from("albums")
+        .select("id,gallery")
+        .eq("id", b.album_id)
         .single();
-
-    if (error) {
-        return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
-        );
+      if (!a) return fail("Album unavailable.");
+      u.album_id = a.id;
+      u.gallery = a.gallery;
     }
-
-    return NextResponse.json({
-        media: data,
-    });
+    if (!Object.keys(u).length) return fail("No changes provided.");
+    const { data, error } = await db
+      .from("media_assets")
+      .update(u)
+      .eq("id", id)
+      .select(mediaFields)
+      .single();
+    if (error) throw error;
+    return NextResponse.json(
+      { media: mediaDTO(data) },
+      { headers: privateHeaders },
+    );
+  } catch {
+    return fail("Could not update photo.", 503);
+  }
+}
+// Regenerate previews for legacy media without changing original bytes.
+export async function POST(request: Request, { params }: Context) {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  const db = getSupabaseAdmin(),
+    created: string[] = [];
+  try {
+    const { id } = await params;
+    if (!uuid(id)) return fail("Invalid photo.");
+    const { data: old } = await db
+      .from("media_assets")
+      .select("id,preview_path,thumbnail_path,client_preview_path")
+      .eq("id", id)
+      .single();
+    if (!old) return fail("Photo unavailable.", 404);
+    const form = await request.formData(),
+      patch: Record<string, unknown> = {};
+    for (const [field, column] of [
+      ["preview", "preview_path"],
+      ["thumbnail", "thumbnail_path"],
+      ["client_preview", "client_preview_path"],
+    ]) {
+      const image = await imageBytes(form.get(field), true),
+        path = `${id}/${crypto.randomUUID()}-${field}.jpeg`;
+      const { error } = await db.storage
+        .from("lkc-previews")
+        .upload(path, image.bytes, { contentType: image.type });
+      if (error) throw error;
+      created.push(path);
+      patch[column] = path;
+    }
+    const w = Number(form.get("width")),
+      h = Number(form.get("height"));
+    if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1)
+      throw new Error();
+    patch.width = w;
+    patch.height = h;
+    const { data, error } = await db
+      .from("media_assets")
+      .update(patch)
+      .eq("id", id)
+      .select(mediaFields)
+      .single();
+    if (error) throw error;
+    const previous = [
+      old.preview_path,
+      old.thumbnail_path,
+      old.client_preview_path,
+    ].filter(Boolean);
+    if (previous.length) await db.storage.from("lkc-previews").remove(previous);
+    return NextResponse.json(
+      { media: mediaDTO(data) },
+      { headers: privateHeaders },
+    );
+  } catch {
+    if (created.length) await db.storage.from("lkc-previews").remove(created);
+    return fail("Could not regenerate previews.", 503);
+  }
+}
+export async function DELETE(_request: Request, { params }: Context) {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized", 401);
+  try {
+    const { id } = await params;
+    if (!uuid(id)) return fail("Invalid photo.");
+    const db = getSupabaseAdmin();
+    // Removing the library record deliberately retains the original for recovery.
+    const { error } = await db
+      .from("media_assets")
+      .update({ is_visible: false, is_featured: false, album_id: null })
+      .eq("id", id);
+    if (error) throw error;
+    return NextResponse.json({ success: true }, { headers: privateHeaders });
+  } catch {
+    return fail("Could not remove photo.", 503);
+  }
 }

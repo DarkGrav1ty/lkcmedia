@@ -1,66 +1,22 @@
-import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-
+import { imageResponse } from "@/lib/media";
+import { fail, uuid } from "@/lib/security";
 export async function GET(
-    request: Request,
-    {
-        params,
-    }: {
-        params: Promise<{ token: string }>;
-    }
+  _request: Request,
+  { params }: { params: Promise<{ token: string }> },
 ) {
+  try {
     const { token } = await params;
-    const supabase = getSupabaseAdmin();
-
-    const { data: record, error } = await supabase
-        .from("download_tokens")
-        .select(`
-            id,
-            expires_at,
-            download_count,
-            max_downloads,
-            order_items (
-                orders ( status ),
-                photos ( original_path )
-            )
-        `)
-        .eq("token", token)
-        .single();
-
-    if (error || !record) {
-        return new NextResponse("Invalid download link.", { status: 404 });
-    }
-
-    if (new Date(record.expires_at) < new Date()) {
-        return new NextResponse("Download link expired.", { status: 410 });
-    }
-
-    if (record.download_count >= record.max_downloads) {
-        return new NextResponse("Download limit reached.", { status: 403 });
-    }
-
-    const item = record.order_items as any;
-
-    if (item?.orders?.status !== "paid") {
-        return new NextResponse("Payment not verified.", { status: 403 });
-    }
-
-    const { data: signed, error: signedError } = await supabase.storage
-        .from("lkc-originals")
-        .createSignedUrl(item.photos.original_path, 60, {
-            download: true,
-        });
-
-    if (signedError || !signed?.signedUrl) {
-        return new NextResponse("Unable to prepare download.", { status: 500 });
-    }
-
-    await supabase
-        .from("download_tokens")
-        .update({
-            download_count: record.download_count + 1,
-        })
-        .eq("id", record.id);
-
-    return NextResponse.redirect(signed.signedUrl);
+    if (!uuid(token)) return fail("Invalid download link.", 404);
+    const { data, error } = await getSupabaseAdmin().rpc(
+      "claim_paid_download",
+      { download_token: token },
+    );
+    if (error) throw error;
+    if (!data)
+      return fail("Download unavailable, expired, or limit reached.", 403);
+    return await imageResponse("lkc-originals", data, "LKC-Media-photo.jpg");
+  } catch {
+    return fail("Download temporarily unavailable.", 503);
+  }
 }
