@@ -6,7 +6,6 @@ import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
 import DailyVerse from "@/components/DailyVerse";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { heroImageUrl } from "@/lib/public-image";
 
 type MediaAsset = {
     id: string;
@@ -21,57 +20,84 @@ type MediaAsset = {
 
 async function cms() {
     try {
-        const db = getSupabaseAdmin();
+        const db =
+            getSupabaseAdmin();
 
         const [
             settingsResult,
             featuredResult,
         ] = await Promise.all([
             db
-                .from("site_settings")
+                .from(
+                    "site_settings"
+                )
                 .select("*")
-                .eq("id", "main")
+                .eq(
+                    "id",
+                    "main"
+                )
                 .single(),
 
             db
-                .from("media_assets")
+                .from(
+                    "media_assets"
+                )
                 .select(
                     "id, file_name, public_url, gallery, is_featured, is_visible, sort_order, created_at"
                 )
-                .eq("is_featured", true)
-                .eq("is_visible", true)
-                .order("sort_order", {
-                    ascending: true,
-                })
-                .order("created_at", {
-                    ascending: false,
-                }),
+                .eq(
+                    "is_featured",
+                    true
+                )
+                .eq(
+                    "is_visible",
+                    true
+                )
+                .order(
+                    "sort_order",
+                    {
+                        ascending: true,
+                    }
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: false,
+                    }
+                ),
         ]);
 
-        if (featuredResult.error) {
+        if (
+            featuredResult.error
+        ) {
             console.error(
                 "Could not load featured media:",
-                featuredResult.error.message
+                featuredResult.error
+                    .message
             );
         }
 
         const featuredMedia =
-            (featuredResult.data || []) as MediaAsset[];
+            (featuredResult.data ||
+                []) as MediaAsset[];
 
         const featured: GalleryPhoto[] =
-            featuredMedia.map((photo) => ({
-                id: photo.id,
-                preview: photo.public_url,
-                title: photo.file_name.replace(
-                    /\.[^/.]+$/,
-                    ""
-                ),
-            }));
+            featuredMedia.map(
+                (photo) => ({
+                    id: photo.id,
+                    preview:
+                        photo.public_url,
+                    title: photo.file_name.replace(
+                        /\.[^/.]+$/,
+                        ""
+                    ),
+                })
+            );
 
         return {
-            settings: settingsResult.data,
+            settings:
+                settingsResult.data,
             featured,
-            heroMedia: featuredMedia[0] || null,
         };
     } catch (error) {
         console.error(
@@ -81,56 +107,47 @@ async function cms() {
 
         return {
             settings: null,
-            featured: [] as GalleryPhoto[],
-            heroMedia: null as MediaAsset | null,
+            featured:
+                [] as GalleryPhoto[],
         };
     }
 }
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+    "force-dynamic";
 
 export default async function Home() {
     const {
         settings,
         featured,
-        heroMedia,
     } = await cms();
-
-    const heroSource =
-        heroMedia?.public_url ||
-        "/images/hero.jpg";
-
-    const hero =
-        heroMedia?.public_url
-            ? heroImageUrl(heroSource)
-            : heroSource;
 
     return (
         <main>
             {/* HERO */}
-            <section className="relative min-h-[92vh] overflow-hidden pt-20">
-                {/* Full-Bleed Hero Photo */}
+            <section className="relative min-h-[82vh] overflow-hidden pt-20 md:min-h-[88vh]">
                 <div className="absolute inset-0">
                     <img
-                        src={hero}
-                        alt="LKC Media featured photography"
+                        src="/images/hero.jpg"
+                        alt="Football team gathered together on the field"
                         fetchPriority="high"
                         decoding="async"
                         draggable={false}
-                        className="h-full w-full select-none object-cover object-[center_22%]"
+                        className="h-full w-full select-none object-cover object-center"
                     />
                 </div>
 
-                {/* Controlled Readability Gradients */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-black/5" />
+                {/* Readability */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
 
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090d]/90 via-transparent to-black/10" />
 
-                {/* Hero Content */}
-                <div className="relative mx-auto flex min-h-[calc(92vh-5rem)] max-w-[1500px] items-end px-5 pb-16 md:px-10 md:pb-20">
+                {/* Content */}
+                <div className="relative mx-auto flex min-h-[calc(82vh-5rem)] max-w-[1500px] items-end px-5 pb-14 md:min-h-[calc(88vh-5rem)] md:px-10 md:pb-20">
                     <div className="max-w-4xl">
                         <p className="mb-5 text-xs font-black uppercase tracking-[.3em] text-[#45a9ff]">
-                            Sports + Portrait Photography
+                            Sports + Portrait
+                            Photography
                         </p>
 
                         <h1 className="text-5xl font-black uppercase leading-[.88] tracking-[-.055em] sm:text-7xl lg:text-[7rem]">
@@ -139,7 +156,7 @@ export default async function Home() {
                             A Game.
                         </h1>
 
-                        <p className="mt-6 max-w-xl text-base leading-7 text-white/70 md:text-lg">
+                        <p className="mt-6 max-w-xl text-base leading-7 text-white/75 md:text-lg">
                             {settings?.tagline ||
                                 "Real moments. Lasting memories."}
                         </p>
@@ -152,7 +169,7 @@ export default async function Home() {
                                 View Galleries
                             </Link>
 
-                            <BookingButton className="rounded-full border border-white/30 bg-black/30 px-6 py-3.5 font-black backdrop-blur-md transition hover:border-white/60 hover:bg-black/50">
+                            <BookingButton className="rounded-full border border-white/30 bg-black/35 px-6 py-3.5 font-black backdrop-blur-md transition hover:border-white/60 hover:bg-black/55">
                                 Book A Session
                             </BookingButton>
                         </div>
@@ -165,15 +182,6 @@ export default async function Home() {
                             </p>
                         </div>
                     </div>
-                </div>
-
-                {/* Scroll Cue */}
-                <div className="pointer-events-none absolute bottom-7 right-6 hidden items-center gap-3 text-white/30 md:flex md:right-10">
-                    <span className="text-[10px] font-black uppercase tracking-[.24em]">
-                        Explore
-                    </span>
-
-                    <div className="h-px w-12 bg-white/25" />
                 </div>
             </section>
 
@@ -197,25 +205,38 @@ export default async function Home() {
 
                     <div>
                         <p className="text-base leading-8 text-white/60 md:text-lg">
-                            I&apos;m Logan, the photographer behind LKC Media.
-                            I started shooting in 2025, focusing on sports
-                            and portraits and the moments people want to
-                            remember.
+                            I&apos;m Logan, the
+                            photographer behind
+                            LKC Media. I started
+                            shooting in 2025,
+                            focusing on sports
+                            and portraits and
+                            the moments people
+                            want to remember.
                         </p>
 
                         <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith is an important part of who I am and
-                            shaped how I approach my work: serve people
-                            well, work with purpose, and give my best to
-                            every shoot. LKC Media is for everyone,
-                            regardless of background or belief.
+                            My faith is an
+                            important part of
+                            who I am and shaped
+                            how I approach my
+                            work: serve people
+                            well, work with
+                            purpose, and give
+                            my best to every
+                            shoot. LKC Media is
+                            for everyone,
+                            regardless of
+                            background or
+                            belief.
                         </p>
 
                         <div className="mt-8 flex items-center gap-4">
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory · Colossians 3:23
+                                For His Glory ·
+                                Colossians 3:23
                             </p>
                         </div>
                     </div>
@@ -247,14 +268,20 @@ export default async function Home() {
                         </Link>
                     </div>
 
-                    {featured.length > 0 ? (
+                    {featured.length >
+                    0 ? (
                         <GalleryLightbox
-                            photos={featured}
+                            photos={
+                                featured
+                            }
                         />
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
                             <p className="text-sm text-white/40">
-                                No featured work is currently published.
+                                No featured
+                                work is
+                                currently
+                                published.
                             </p>
                         </div>
                     )}
@@ -278,13 +305,18 @@ export default async function Home() {
                     </p>
 
                     <h2 className="mt-4 text-5xl font-black uppercase tracking-[-.05em] md:text-7xl">
-                        Let&apos;s Create Something.
+                        Let&apos;s Create
+                        Something.
                     </h2>
 
                     <p className="mx-auto mt-5 max-w-xl leading-7 text-white/50">
-                        Tell me about the game, portrait session,
-                        date, and location. Let&apos;s turn the
-                        moment into something worth remembering.
+                        Tell me about the
+                        game, portrait
+                        session, date, and
+                        location. Let&apos;s
+                        turn the moment into
+                        something worth
+                        remembering.
                     </p>
 
                     <BookingButton className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black transition hover:bg-[#0077df]">
@@ -303,7 +335,8 @@ export default async function Home() {
                         </p>
 
                         <p className="mt-1 text-xs text-white/30">
-                            © 2026 LKC Media. All rights reserved.
+                            © 2026 LKC Media.
+                            All rights reserved.
                         </p>
                     </div>
 
