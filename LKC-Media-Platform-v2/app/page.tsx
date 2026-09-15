@@ -71,6 +71,7 @@ async function cms() {
         return {
             settings: settingsResult.data,
             featured,
+            heroMedia: featuredMedia.slice(0, 3),
         };
     } catch (error) {
         console.error(
@@ -81,6 +82,7 @@ async function cms() {
         return {
             settings: null,
             featured: [] as GalleryPhoto[],
+            heroMedia: [] as MediaAsset[],
         };
     }
 }
@@ -91,20 +93,73 @@ export default async function Home() {
     const {
         settings,
         featured,
+        heroMedia,
     } = await cms();
+
+    const primaryHero =
+        heroMedia[0]?.public_url ||
+        "/images/hero.jpg";
+
+    const secondaryHero =
+        heroMedia[1]?.public_url ||
+        primaryHero;
+
+    const tertiaryHero =
+        heroMedia[2]?.public_url ||
+        secondaryHero;
 
     return (
         <main>
             {/* HERO */}
             <section className="relative min-h-[92vh] overflow-hidden pt-20">
-                <img
-                    src="/images/hero.jpg"
-                    alt="LKC Media sports photography"
-                    className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
-                />
+                {/* Mobile Hero */}
+                <div className="absolute inset-0 md:hidden">
+                    <img
+                        src={primaryHero}
+                        alt="LKC Media featured photography"
+                        className="h-full w-full object-cover object-[center_22%]"
+                    />
 
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/15" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
+                </div>
+
+                {/* Desktop Split Hero */}
+                <div className="absolute inset-0 hidden md:grid md:grid-cols-[1.45fr_.55fr]">
+                    <div className="relative overflow-hidden">
+                        <img
+                            src={primaryHero}
+                            alt="LKC Media featured sports photography"
+                            className="h-full w-full object-cover object-[center_22%]"
+                        />
+
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
+                    </div>
+
+                    <div className="grid grid-rows-2 gap-1 bg-[#07090d] pl-1">
+                        <div className="relative overflow-hidden">
+                            <img
+                                src={secondaryHero}
+                                alt="LKC Media featured photography"
+                                className="h-full w-full object-cover"
+                            />
+
+                            <div className="absolute inset-0 bg-black/15" />
+                        </div>
+
+                        <div className="relative overflow-hidden">
+                            <img
+                                src={tertiaryHero}
+                                alt="LKC Media featured photography"
+                                className="h-full w-full object-cover"
+                            />
+
+                            <div className="absolute inset-0 bg-black/15" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090d] via-transparent to-black/20" />
 
                 <div className="relative mx-auto flex min-h-[calc(92vh-5rem)] max-w-[1500px] items-end px-5 pb-16 md:px-10 md:pb-24">
                     <div className="max-w-5xl">
@@ -125,14 +180,14 @@ export default async function Home() {
 
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Link
-                                href="/gallery"
-                                className="rounded-full bg-[#0088ff] px-6 py-3.5 font-black"
+                                href="/#work"
+                                className="rounded-full bg-[#0088ff] px-6 py-3.5 font-black transition hover:bg-[#0077df]"
                             >
-                                View Galleries
+                                View Work
                             </Link>
 
-                            <BookingButton className="rounded-full border border-white/20 bg-black/30 px-6 py-3.5 font-black backdrop-blur-sm">
-                                Book a Shoot
+                            <BookingButton className="rounded-full border border-white/25 bg-black/40 px-6 py-3.5 font-black backdrop-blur-sm transition hover:border-white/50 hover:bg-black/60">
+                                Book Session
                             </BookingButton>
                         </div>
 
@@ -147,7 +202,7 @@ export default async function Home() {
                 </div>
             </section>
 
-            {/* PURPOSE */}
+            {/* PURPOSE — PRESERVED */}
             <section className="relative overflow-hidden border-y border-white/10 px-5 py-24 md:px-10 md:py-32">
                 <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.15fr] lg:items-center">
                     <div>
@@ -167,15 +222,18 @@ export default async function Home() {
 
                     <div>
                         <p className="text-base leading-8 text-white/60 md:text-lg">
-                            I&apos;m Logan, the photographer being LKC Media. 
-                            I started shooting in 2025, focusing on sports and portraits and the moments people want to remember.
+                            I&apos;m Logan, the photographer behind LKC Media.
+                            I started shooting in 2025, focusing on sports
+                            and portraits and the moments people want to
+                            remember.
                         </p>
 
                         <p className="mt-5 text-base leading-8 text-white/50">
-                            My faith is an important part of who I am and shaped how I approach my work:
-                            serve people well, work with purpose, and
-                            give my best to every shoot.
-                            LKC Media is for everyone, regardless of background or belief.
+                            My faith is an important part of who I am and
+                            shaped how I approach my work: serve people
+                            well, work with purpose, and give my best to
+                            every shoot. LKC Media is for everyone,
+                            regardless of background or belief.
                         </p>
 
                         <div className="mt-8 flex items-center gap-4">
@@ -190,7 +248,10 @@ export default async function Home() {
             </section>
 
             {/* FEATURED WORK */}
-            <section className="px-5 py-24 md:px-10">
+            <section
+                id="work"
+                className="scroll-mt-20 px-5 py-24 md:px-10"
+            >
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-10 flex items-end justify-between gap-6">
                         <div>
@@ -234,7 +295,7 @@ export default async function Home() {
             {/* BOOKING */}
             <section
                 id="book"
-                className="border-t border-white/10 px-5 py-28 text-center md:px-10"
+                className="scroll-mt-20 border-t border-white/10 px-5 py-28 text-center md:px-10"
             >
                 <div className="mx-auto max-w-3xl">
                     <p className="text-xs font-black uppercase tracking-[.28em] text-[#0088ff]">
@@ -251,8 +312,8 @@ export default async function Home() {
                         moment into something worth remembering.
                     </p>
 
-                    <BookingButton className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black">
-                        Book a Shoot
+                    <BookingButton className="mt-8 inline-block rounded-full bg-[#0088ff] px-7 py-4 font-black transition hover:bg-[#0077df]">
+                        Book Session
                     </BookingButton>
                 </div>
             </section>

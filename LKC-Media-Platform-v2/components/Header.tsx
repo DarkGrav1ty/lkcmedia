@@ -3,26 +3,48 @@ import BookingButton from "@/components/BookingButton";
 
 export default function Header() {
     return (
-        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#07090d]/80 backdrop-blur-xl">
+        <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07090d]/95 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between px-5 md:px-10">
-                <Link href="/" className="flex items-center gap-3 font-black tracking-tight">
-                    <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-white text-xs">
+                <Link
+                    href="/"
+                    className="group flex items-center gap-3 font-black tracking-tight"
+                >
+                    <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-white text-xs transition group-hover:border-[#0088ff] group-hover:text-[#45a9ff]">
                         LKC
                     </span>
-                    <span>LKC MEDIA</span>
+
+                    <span className="hidden sm:inline">
+                        LKC MEDIA
+                    </span>
                 </Link>
 
-                <nav className="flex items-center gap-5 text-sm font-bold text-white/65 md:gap-8">
-                    <Link className="transition hover:text-white" href="/gallery">
+                <nav
+                    aria-label="Main navigation"
+                    className="flex items-center gap-4 text-sm font-bold text-white/60 md:gap-7"
+                >
+                    <Link
+                        href="/#work"
+                        className="hidden transition hover:text-white md:block"
+                    >
+                        Work
+                    </Link>
+
+                    <Link
+                        href="/gallery"
+                        className="transition hover:text-white"
+                    >
                         Galleries
                     </Link>
-                    <Link className="hidden transition hover:text-white sm:block" href="/#pricing">
+
+                    <Link
+                        href="/#pricing"
+                        className="hidden transition hover:text-white sm:block"
+                    >
                         Pricing
                     </Link>
-                    <BookingButton
-                        className="rounded-full bg-[#0088ff] px-4 py-2.5 text-white transition hover:bg-[#0077df]"
-                    >
-                        Book a Shoot
+
+                    <BookingButton className="rounded-full bg-[#0088ff] px-4 py-2.5 font-black text-white transition hover:bg-[#0077df]">
+                        Book Session
                     </BookingButton>
                 </nav>
             </div>
