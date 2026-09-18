@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { activeAlbum } from "@/lib/client-auth";
 import { albumFields } from "@/lib/media";
@@ -7,6 +8,7 @@ import {
     SITE_URL,
     pageMetadata,
 } from "@/lib/site";
+
 import AlbumPhotos from "@/components/AlbumPhotos";
 
 type Props = {
@@ -38,7 +40,6 @@ async function readAlbum(slug: string) {
         .select(albumFields)
         .eq("slug", slug)
         .eq("is_visible", true)
-        .eq("is_private", false)
         .maybeSingle();
 
     if (error) {
@@ -53,7 +54,9 @@ async function readAlbum(slug: string) {
 async function readCover(albumId: string) {
     const { data, error } = await getSupabaseAdmin()
         .from("media_assets")
-        .select("id,alt_text,file_name,width,height")
+        .select(
+            "id,alt_text,file_name,width,height",
+        )
         .eq("album_id", albumId)
         .eq("is_visible", true)
         .not("preview_path", "is", null)
@@ -129,6 +132,7 @@ export default async function Page({
     searchParams,
 }: Props) {
     const { slug } = await params;
+
     const album = await readAlbum(slug);
 
     if (!album) {
@@ -141,7 +145,9 @@ export default async function Page({
         1,
         Math.min(
             10000,
-            Math.floor(Number(query.page) || 1),
+            Math.floor(
+                Number(query.page) || 1,
+            ),
         ),
     );
 
@@ -223,7 +229,8 @@ export default async function Page({
 
             <header>
                 <p className="eyebrow mt-8">
-                    {album.gallery === "portraits"
+                    {album.gallery ===
+                    "portraits"
                         ? "Portrait Photography"
                         : "Sports Photography"}
                 </p>
@@ -234,7 +241,9 @@ export default async function Page({
 
                 {album.event_date && (
                     <time
-                        dateTime={album.event_date}
+                        dateTime={
+                            album.event_date
+                        }
                         className="mt-4 block text-slate-300"
                     >
                         {album.event_date}
