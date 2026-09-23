@@ -146,7 +146,8 @@ export default function AddressInput({ onLocationChange }: AddressInputProps) {
 
           return (
             countryCode?.toUpperCase() === "US" &&
-            state?.toLowerCase() === "arizona"
+            (state?.toLowerCase() === "arizona" ||
+              state?.toUpperCase() === "AZ")
           );
         });
 

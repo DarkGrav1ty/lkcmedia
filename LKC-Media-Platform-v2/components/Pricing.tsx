@@ -111,9 +111,14 @@ export default function Pricing() {
                                 </p>
                             </div>
 
-                            <strong className="text-4xl">
-                                Contact
-                            </strong>
+                            <div className="sm:text-right">
+                                <strong className="text-4xl">
+                                    $90
+                                </strong>
+                                <p className="mt-1 text-xs text-white/40">
+                                    per game
+                                </p>
+                            </div>
                         </div>
                     </div>
 

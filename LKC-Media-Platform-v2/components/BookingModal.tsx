@@ -16,6 +16,13 @@ export default function BookingModal() {
 
   const [location, setLocation] = useState<SelectedLocation | null>(null);
 
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Phoenix",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
   useEffect(() => {
     function openBookingModal() {
       setSubmitted(false);
@@ -278,6 +285,7 @@ export default function BookingModal() {
                 id="booking-date"
                 name="date"
                 type="date"
+                min={today}
                 required
                 disabled={submitting}
                 className="w-full rounded-xl border border-white/10 bg-[#080b10] px-4 py-3.5 text-white outline-none transition focus:border-[#0088ff] disabled:opacity-50"

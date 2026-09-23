@@ -1,0 +1,5 @@
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { canViewCollection } from "@/lib/collection-auth";
+import { imageResponse } from "@/lib/media";
+import { fail,uuid } from "@/lib/security";
+export async function GET(_r:Request,{params}:{params:Promise<{token:string,id:string}>}){try{const{token,id}=await params;if(!uuid(id))return fail("Image unavailable.",404);const db=getSupabaseAdmin();const{data:c}=await db.from("client_collections").select("*").eq("share_token",token).maybeSingle();if(!c||!(await canViewCollection(c)))return fail("Image unavailable.",403);const{data:tag}=await db.from("photo_subjects").select("media_id").eq("subject_id",c.subject_id).eq("media_id",id).maybeSingle();if(!tag)return fail("Image unavailable.",404);const{data:m}=await db.from("media_assets").select("id,album_id,is_visible,client_preview_path,preview_path").eq("id",id).eq("album_id",c.album_id).eq("is_visible",true).maybeSingle();if(!m)return fail("Image unavailable.",404);return imageResponse("lkc-previews",m.client_preview_path||m.preview_path);}catch{return fail("Image temporarily unavailable.",503)}}

@@ -1,4 +1,4 @@
-﻿import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -43,33 +43,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
     ];
 
-    const db = getSupabaseAdmin();
+    try {
+        const db = getSupabaseAdmin();
 
-    for (let offset = 0; ; offset += 500) {
-        const { data, error } = await db
-            .from("public_album_cards")
-            .select("slug,event_date")
-            .order("id")
-            .range(offset, offset + 499);
+        for (let offset = 0; ; offset += 500) {
+            const { data, error } = await db
+                .from("public_album_cards")
+                .select("slug,event_date")
+                .order("id")
+                .range(offset, offset + 499);
 
-        if (error) {
-            throw new Error("Sitemap unavailable");
+            if (error) {
+                break;
+            }
+
+            const albums = (data || []) as AlbumRow[];
+
+            pages.push(
+                ...albums.map((album) => ({
+                    url: `${SITE_URL}/gallery/${album.slug}`,
+                    lastModified: album.event_date || undefined,
+                    changeFrequency: "monthly" as const,
+                    priority: 0.8,
+                })),
+            );
+
+            if (albums.length < 500) {
+                break;
+            }
         }
-
-        const albums = (data || []) as AlbumRow[];
-
-        pages.push(
-            ...albums.map((album) => ({
-                url: `${SITE_URL}/gallery/${album.slug}`,
-                lastModified: album.event_date || undefined,
-                changeFrequency: "monthly" as const,
-                priority: 0.8,
-            })),
-        );
-
-        if (albums.length < 500) {
-            break;
-        }
+    } catch {
+        // Fallback to static routes if database is unreachable during build
     }
 
     return pages;

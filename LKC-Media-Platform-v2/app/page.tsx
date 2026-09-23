@@ -1,18 +1,80 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Pricing from "@/components/Pricing";
 import BookingButton from "@/components/BookingButton";
-import DailyVerse from "@/components/DailyVerse";
+import CMSSections from "@/components/CMSSections";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic = "force-static";
+export const revalidate = 3600;
 
-export default function Home() {
+type FeaturedPhoto = {
+    id: string;
+    file_name: string;
+    alt_text: string | null;
+    width: number | null;
+    height: number | null;
+    preview_path: string | null;
+    albums: {
+        name: string;
+        slug: string;
+        gallery: string;
+    } | null;
+};
+
+async function getHomeData() {
+    try {
+        const db = getSupabaseAdmin();
+
+        const [settingsRes, sectionsRes, featuredRes] = await Promise.allSettled([
+            db
+                .from("site_settings")
+                .select("site_name,tagline,contact_email,instagram_url")
+                .eq("id", "main")
+                .maybeSingle(),
+            db
+                .from("page_sections")
+                .select("*")
+                .eq("page", "home")
+                .eq("is_visible", true)
+                .order("sort_order"),
+            db
+                .from("media_assets")
+                .select("id,file_name,alt_text,width,height,preview_path,albums!inner(name,slug,gallery,is_visible,is_private)")
+                .eq("is_visible", true)
+                .eq("albums.is_visible", true)
+                .eq("albums.is_private", false)
+                .not("preview_path", "is", null)
+                .order("is_featured", { ascending: false })
+                .order("sort_order", { ascending: true })
+                .limit(6),
+        ]);
+
+        const settings = settingsRes.status === "fulfilled" ? settingsRes.value.data : null;
+        const sections = (sectionsRes.status === "fulfilled" && sectionsRes.value.data ? sectionsRes.value.data : []);
+        const featuredPhotos = (featuredRes.status === "fulfilled" && featuredRes.value.data ? featuredRes.value.data : []) as unknown as FeaturedPhoto[];
+
+        return { settings, sections, featuredPhotos };
+    } catch {
+        return { settings: null, sections: [], featuredPhotos: [] };
+    }
+}
+
+export default async function Home() {
+    const { settings, sections, featuredPhotos } = await getHomeData();
+    const siteName = settings?.site_name || "LKC Media";
+    const tagline = settings?.tagline || "Real moments. Lasting memories.";
+
+    // Filter out initial duplicate unedited seed section so preserved brand section remains clean
+    const customSections = sections.filter(
+        (s: any) => !(s.title === "About LKC Media" && s.subtitle === "Behind the camera")
+    );
+
     return (
         <main>
             {/* HERO */}
             <section className="relative min-h-[82vh] overflow-hidden pt-20 md:min-h-[88vh]">
                 <div className="absolute inset-0">
                     <img
-                        src="/images/hero.jpg"
+                        src="images\hero.jpg"
                         alt="Football team gathered together on the field"
                         fetchPriority="high"
                         decoding="async"
@@ -40,7 +102,7 @@ export default function Home() {
                         </h1>
 
                         <p className="mt-6 max-w-xl text-base leading-7 text-white/75 md:text-lg">
-                            Real moments. Lasting memories.
+                            {tagline}
                         </p>
 
                         <div className="mt-8 flex flex-wrap gap-3">
@@ -60,14 +122,14 @@ export default function Home() {
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em]">
-                                LKC Media Â· Arizona
+                                {siteName} · Arizona
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* PURPOSE â€” PRESERVED */}
+            {/* PURPOSE — PRESERVED */}
             <section className="relative overflow-hidden border-y border-white/10 px-5 py-24 md:px-10 md:py-32">
                 <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.15fr] lg:items-center">
                     <div>
@@ -105,12 +167,15 @@ export default function Home() {
                             <div className="h-px w-10 bg-[#0088ff]" />
 
                             <p className="text-xs font-bold uppercase tracking-[.22em] text-white/35">
-                                For His Glory Â· Colossians 3:23
+                                For His Glory · Colossians 3:23
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
+
+            {/* CMS CUSTOM SECTIONS */}
+            {customSections.length > 0 && <CMSSections sections={customSections} />}
 
             {/* FEATURED WORK */}
             <section
@@ -137,26 +202,54 @@ export default function Home() {
                         </Link>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
-                        <p className="text-sm text-white/40">
-                            View the latest published work in Galleries.
-                        </p>
+                    {featuredPhotos.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {featuredPhotos.map((photo) => (
+                                <Link
+                                    key={photo.id}
+                                    href={photo.albums?.slug ? `/gallery/${photo.albums.slug}` : "/gallery"}
+                                    className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118]"
+                                >
+                                    <img
+                                        src={`/media/${photo.id}?size=thumb`}
+                                        alt={photo.alt_text || photo.file_name}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 transition group-hover:opacity-100" />
+                                    <div className="absolute inset-x-0 bottom-0 p-5">
+                                        {photo.albums && (
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#45a9ff]">
+                                                {photo.albums.name}
+                                            </p>
+                                        )}
+                                        <p className="mt-1 text-sm font-bold text-white/90 truncate">
+                                            {photo.alt_text || photo.file_name}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
+                            <p className="text-sm text-white/40">
+                                View the latest published work in Galleries.
+                            </p>
 
-                        <Link
-                            href="/gallery"
-                            className="mt-5 inline-block rounded-full border border-white/15 px-5 py-2.5 text-sm font-black transition hover:border-white/40"
-                        >
-                            View Galleries
-                        </Link>
-                    </div>
+                            <Link
+                                href="/gallery"
+                                className="mt-5 inline-block rounded-full border border-white/15 px-5 py-2.5 text-sm font-black transition hover:border-white/40"
+                            >
+                                View Galleries
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </section>
 
             {/* PRICING */}
             <Pricing />
-
-            {/* DAILY SCRIPTURE */}
-            <DailyVerse />
 
             {/* BOOKING */}
             <section
@@ -186,5 +279,3 @@ export default function Home() {
         </main>
     );
 }
-
-

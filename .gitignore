@@ -21,3 +21,31 @@ Thumbs.db
 .vscode/
 
 *.tsbuildinfo
+
+# Vinext / Cloudflare build output
+dist/
+.vinext/
+.wrangler/
+
+# Additional local secrets
+.dev.vars
+.dev.vars.*
+.env.*
+
+# Temporary backup
+.gitignore.storefront-backup
+
+# Vinext and Cloudflare
+dist/
+.vinext/
+.wrangler/
+
+# Local secrets
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# Local backups
+*-BACKUP/
+.gitignore.storefront-backup

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import BookingButton from "@/components/BookingButton";
 
 export default function Header() {
@@ -10,9 +10,11 @@ export default function Header() {
                     className="group flex items-center gap-3 font-black tracking-tight"
                     aria-label="LKC Media home"
                 >
-                    <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-white text-xs transition group-hover:border-[#0088ff] group-hover:text-[#45a9ff]">
-                        LKC
-                    </span>
+                    <img
+                        src="/logo/lkc-logo.png"
+                        alt="LKC Media logo"
+                        className="h-10 w-10 object-contain"
+                    />
 
                     <span className="hidden sm:inline">
                         LKC MEDIA
@@ -21,11 +23,11 @@ export default function Header() {
 
                 <nav
                     aria-label="Main navigation"
-                    className="flex items-center gap-4 text-sm font-bold text-white/60 md:gap-7"
+                    className="flex items-center gap-3.5 text-xs font-bold text-white/60 sm:gap-6 sm:text-sm md:gap-7"
                 >
                     <Link
                         href="/#work"
-                        className="hidden transition hover:text-white lg:block"
+                        className="hidden transition hover:text-white sm:block"
                     >
                         Work
                     </Link>
@@ -39,12 +41,12 @@ export default function Header() {
 
                     <Link
                         href="/#pricing"
-                        className="hidden transition hover:text-white lg:block"
+                        className="transition hover:text-white"
                     >
                         Pricing
                     </Link>
 
-                    <BookingButton className="rounded-full bg-[#0088ff] px-4 py-2.5 font-black text-white transition hover:bg-[#0077df]">
+                    <BookingButton className="rounded-full bg-[#0088ff] px-3.5 py-2 font-black text-white transition hover:bg-[#0077df] sm:px-4 sm:py-2.5">
                         Book Session
                     </BookingButton>
                 </nav>
